@@ -180,7 +180,6 @@ class RedtextGenerator:
             },
             "attacker_persona": persona_title,
             "urgency_level": self.urgency,
-            "psychological_principles": random.sample(PSYCH_PRINCIPLES, k=3)
         }
     
     # ───────────────────────────────────────────────────────
@@ -345,6 +344,8 @@ class RedtextGenerator:
         return {
             "operation_name": operation_name,
             "quarter": quarter,
+            "target_company": self.company_name,
+            "industry": self.industry["name"],
             "seasonal_hook": seasonal_hook,
             "phishing": phishing_scenario,
             "social": social_scenario,
