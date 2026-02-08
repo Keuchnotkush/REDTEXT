@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "redtext-generator"
+version = "1.0.0"
+description = "Social Engineering Scenario Builder for Authorized Red Team Operations"
+readme = "README.md"
+license = {text = GPL-3.0-or-later"}
+requires-python = ">=3.8"
+authors = [{name = "keuchnotkush"}]
+keywords = ["social-engineering", "red-team", "penetration-testing", "cybersecurity"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "Topic :: Security",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.scripts]
+redtext-gen = "redtext_generator.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["redtext_generator*"]
