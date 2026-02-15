@@ -134,6 +134,169 @@ def cmd_generate(args):
         print(_c(f"\n  ✓ Exported Markdown: {path}", Colors.YELLOW))
 
 
+def cmd_gophish(args):
+    """Dispatch GoPhish sub-subcommands."""
+    subcmd = getattr(args, "gophish_command", None)
+    if not subcmd:
+        print(_c("  Use 'redtext-gen gophish --help' for available commands.", Colors.YELLOW))
+        return
+
+    if subcmd == "setup":
+        _gophish_setup()
+    elif subcmd == "templates":
+        _gophish_templates(args)
+    elif subcmd == "push":
+        _gophish_push(args)
+    elif subcmd == "campaign":
+        _gophish_campaign(args)
+    elif subcmd == "status":
+        _gophish_status(args)
+
+
+def _gophish_setup():
+    """Interactive setup for GoPhish connection."""
+    from .config import save_gophish_config
+
+    print(_c("\n  GoPhish API Configuration\n", Colors.BOLD + Colors.CYAN))
+    api_url = input("  GoPhish URL [https://localhost:3333]: ").strip() or "https://localhost:3333"
+    api_key = input("  API Key: ").strip()
+    verify_ssl_input = input("  Verify SSL? [Y/n]: ").strip().lower()
+    verify_ssl = verify_ssl_input not in ("n", "no", "false", "0")
+
+    if not api_key:
+        print(_c("  Error: API key is required.", Colors.RED))
+        return
+
+    path = save_gophish_config(api_url, api_key, verify_ssl)
+    print(_c(f"\n  Configuration saved to {path}", Colors.GREEN))
+
+
+def _gophish_templates(args):
+    """List templates from GoPhish server."""
+    from .config import load_gophish_config
+    from .gophish import GoPhishClient, GoPhishAPIError
+
+    try:
+        config = load_gophish_config(args)
+        client = GoPhishClient(config["api_url"], config["api_key"], config["verify_ssl"])
+        templates = client.get_templates()
+    except (ValueError, GoPhishAPIError) as e:
+        print(_c(f"  Error: {e}", Colors.RED))
+        return
+
+    print(_c("\n  GoPhish Templates:\n", Colors.BOLD + Colors.CYAN))
+    if not templates:
+        print(_c("  No templates found.", Colors.DIM))
+        return
+    for t in templates:
+        print(f"    {_c(str(t.get('id', '?')), Colors.YELLOW):>10s}  {t.get('name', 'Unnamed')}")
+    print()
+
+
+def _gophish_push(args):
+    """Generate a phishing scenario and push it as a GoPhish template."""
+    from .config import load_gophish_config
+    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish_bridge import phishing_to_template
+
+    gen = RedtextGenerator(
+        industry=args.industry, urgency=args.urgency,
+        persona=args.persona, company_name=args.company,
+    )
+
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    loading_animation("Crafting phishing template", 1.5)
+    phishing_data = gen.generate_phishing_email(template_id=args.template)
+    template_payload = phishing_to_template(phishing_data, template_name=args.name)
+
+    print(format_phishing_email(phishing_data))
+    print(_c(f"  Pushing as GoPhish template: {template_payload['name']}", Colors.YELLOW))
+
+    try:
+        config = load_gophish_config(args)
+        client = GoPhishClient(config["api_url"], config["api_key"], config["verify_ssl"])
+        result = client.create_template(
+            name=template_payload["name"],
+            subject=template_payload["subject"],
+            text=template_payload["text"],
+            html=template_payload["html"],
+        )
+    except (ValueError, GoPhishAPIError) as e:
+        print(_c(f"  Error: {e}", Colors.RED))
+        return
+
+    print(_c(f"\n  Template created (ID: {result.get('id', 'unknown')})", Colors.GREEN))
+
+
+def _gophish_campaign(args):
+    """Create a full GoPhish campaign."""
+    from .config import load_gophish_config
+    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish_bridge import build_campaign_config, parse_targets_csv
+
+    try:
+        config = load_gophish_config(args)
+        client = GoPhishClient(config["api_url"], config["api_key"], config["verify_ssl"])
+
+        if args.targets_csv:
+            loading_animation("Parsing targets CSV", 0.5)
+            targets = parse_targets_csv(args.targets_csv)
+            client.create_group(args.group_name, targets)
+            print(_c(f"  Created group '{args.group_name}' with {len(targets)} targets", Colors.GREEN))
+
+        campaign_name = args.campaign_name or f"REDTEXT Campaign - {args.template_name}"
+        campaign_config = build_campaign_config(
+            scenario_name=campaign_name,
+            template_name=args.template_name,
+            group_name=args.group_name,
+            smtp_name=args.smtp_name,
+            landing_page=args.page_name,
+            url=args.url,
+            launch_date=args.launch_date,
+        )
+
+        loading_animation("Creating campaign", 1.0)
+        result = client.create_campaign(**campaign_config)
+    except (ValueError, GoPhishAPIError) as e:
+        print(_c(f"  Error: {e}", Colors.RED))
+        return
+
+    print(_c(f"\n  Campaign created (ID: {result.get('id', 'unknown')})", Colors.GREEN))
+    if args.launch_date:
+        print(_c(f"  Scheduled for: {args.launch_date}", Colors.YELLOW))
+    else:
+        print(_c("  Campaign launched immediately.", Colors.YELLOW))
+
+
+def _gophish_status(args):
+    """Display campaign results."""
+    from .config import load_gophish_config
+    from .gophish import GoPhishClient, GoPhishAPIError
+
+    try:
+        config = load_gophish_config(args)
+        client = GoPhishClient(config["api_url"], config["api_key"], config["verify_ssl"])
+        results = client.get_campaign_results(args.campaign_id)
+    except (ValueError, GoPhishAPIError) as e:
+        print(_c(f"  Error: {e}", Colors.RED))
+        return
+
+    print(_c(f"\n  Campaign {args.campaign_id} Results:\n", Colors.BOLD + Colors.CYAN))
+    stats = results.get("stats", {})
+    if stats:
+        for key, val in stats.items():
+            label = key.replace("_", " ").title()
+            print(f"    {_c(label + ':', Colors.GREEN)} {val}")
+    else:
+        for key, val in results.items():
+            if isinstance(val, (str, int, float)):
+                label = key.replace("_", " ").title()
+                print(f"    {_c(label + ':', Colors.GREEN)} {val}")
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="redtext-gen",
@@ -175,6 +338,39 @@ def main():
                        ("physical", "Generate physical access pretext"), ("full", "Generate full attack scenario")]:
         add_common_args(subparsers.add_parser(name, help=desc))
 
+    # ── GoPhish integration subcommands ────────────────────────
+    gophish_parser = subparsers.add_parser("gophish", help="GoPhish integration commands")
+    gophish_sub = gophish_parser.add_subparsers(dest="gophish_command")
+
+    gophish_sub.add_parser("setup", help="Configure GoPhish API connection")
+    gophish_sub.add_parser("templates", help="List templates from GoPhish server")
+
+    push_parser = gophish_sub.add_parser("push", help="Generate and push phishing template to GoPhish")
+    add_common_args(push_parser)
+    push_parser.add_argument("--name", default=None, help="Override template name in GoPhish")
+    push_parser.add_argument("--gophish-url", default=None, help="GoPhish API URL")
+    push_parser.add_argument("--gophish-key", default=None, help="GoPhish API key")
+    push_parser.add_argument("--no-verify-ssl", action="store_true", help="Skip SSL certificate verification")
+
+    camp_parser = gophish_sub.add_parser("campaign", help="Create a GoPhish campaign")
+    camp_parser.add_argument("--template-name", required=True, help="GoPhish template name")
+    camp_parser.add_argument("--group-name", required=True, help="GoPhish target group name")
+    camp_parser.add_argument("--smtp-name", required=True, help="GoPhish SMTP profile name")
+    camp_parser.add_argument("--page-name", required=True, help="GoPhish landing page name")
+    camp_parser.add_argument("--url", required=True, help="Phishing URL")
+    camp_parser.add_argument("--targets-csv", default=None, help="CSV file to auto-create target group")
+    camp_parser.add_argument("--launch-date", default=None, help="Campaign launch date (ISO 8601)")
+    camp_parser.add_argument("--campaign-name", default=None, help="Campaign name (auto-generated if omitted)")
+    camp_parser.add_argument("--gophish-url", default=None, help="GoPhish API URL")
+    camp_parser.add_argument("--gophish-key", default=None, help="GoPhish API key")
+    camp_parser.add_argument("--no-verify-ssl", action="store_true", help="Skip SSL certificate verification")
+
+    status_parser = gophish_sub.add_parser("status", help="Get campaign results")
+    status_parser.add_argument("campaign_id", type=int, help="Campaign ID")
+    status_parser.add_argument("--gophish-url", default=None, help="GoPhish API URL")
+    status_parser.add_argument("--gophish-key", default=None, help="GoPhish API key")
+    status_parser.add_argument("--no-verify-ssl", action="store_true", help="Skip SSL certificate verification")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -187,6 +383,8 @@ def main():
 
     if args.command == "list":
         cmd_list(args)
+    elif args.command == "gophish":
+        cmd_gophish(args)
     else:
         if not getattr(args, "no_disclaimer", False):
             print(DISCLAIMER)

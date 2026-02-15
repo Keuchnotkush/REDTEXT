@@ -33,7 +33,7 @@
 
 Redtext generates realistic social engineering scenarios for red team engagements. Feed it a target industry, attacker persona, and urgency level — it outputs ready-to-use phishing emails, vishing call scripts, and physical access pretexts with dynamically generated names, companies, and details.
 
-No external dependencies. No API keys. Pure Python.
+No external dependencies. Pure Python. Optional GoPhish integration for live campaign deployment.
 
 ## Installation
 ```bash
@@ -122,6 +122,67 @@ Every generated scenario leverages [Cialdini's Principles of Influence](https://
 | **Liking** | Rapport building before the ask |
 | **Commitment** | Small asks escalating to sensitive requests |
 
+## GoPhish Integration
+
+Redtext integrates with [GoPhish](https://getgophish.com/) to push generated scenarios directly into live phishing campaigns.
+
+### Setup
+```bash
+# Configure GoPhish API connection (saved to ~/.config/redtext/config.ini)
+python -m redtext_generator gophish setup
+```
+
+You can also configure via environment variables (`REDTEXT_GOPHISH_URL`, `REDTEXT_GOPHISH_KEY`) or CLI flags (`--gophish-url`, `--gophish-key`).
+
+### Commands
+```bash
+# List existing GoPhish templates
+python -m redtext_generator gophish templates
+
+# Generate a phishing scenario and push it as a GoPhish template
+python -m redtext_generator gophish push --industry finance --urgency high
+
+# Push with a custom template name
+python -m redtext_generator gophish push --industry tech --name "Q1 Security Audit"
+
+# Create a full campaign (requires existing template, SMTP profile, landing page, and group)
+python -m redtext_generator gophish campaign \
+  --template-name "Q1 Security Audit" \
+  --group-name "Engineering Team" \
+  --smtp-name "Relay1" \
+  --page-name "O365 Login" \
+  --url "https://phish.example.com"
+
+# Create a campaign with auto-created target group from CSV
+python -m redtext_generator gophish campaign \
+  --template-name "Q1 Security Audit" \
+  --group-name "New Targets" \
+  --targets-csv targets.csv \
+  --smtp-name "Relay1" \
+  --page-name "O365 Login" \
+  --url "https://phish.example.com" \
+  --launch-date "2025-03-01T09:00:00+00:00"
+
+# Check campaign results
+python -m redtext_generator gophish status 42
+```
+
+### Target CSV Format
+```csv
+email,first_name,last_name,position
+alice@corp.com,Alice,Smith,Engineer
+bob@corp.com,Bob,Jones,Manager
+```
+
+### SSL Verification
+
+GoPhish often runs on self-signed certificates. Use `--no-verify-ssl` to skip verification:
+```bash
+python -m redtext_generator gophish templates --no-verify-ssl
+```
+
+Or set `verify_ssl = false` in your config file during `gophish setup`.
+
 ## Export
 ```bash
 # Export as JSON
@@ -142,7 +203,16 @@ redtext-generator/
 │   ├── __main__.py          # CLI entry point (argparse)
 │   ├── templates.py         # Industries, personas, email/vishing/physical templates
 │   ├── generator.py         # Core engine — assembles scenarios from templates
-│   └── formatters.py        # Terminal display (ANSI colors) + JSON/Markdown export
+│   ├── formatters.py        # Terminal display (ANSI colors) + JSON/Markdown export
+│   ├── gophish.py           # GoPhish API client (urllib)
+│   ├── gophish_bridge.py    # REDTEXT → GoPhish data conversion
+│   └── config.py            # Config management (INI + env vars + CLI)
+├── tests/
+│   ├── test_generator.py
+│   ├── test_formatters.py
+│   ├── test_cli.py
+│   ├── test_templates.py
+│   └── test_gophish.py      # GoPhish integration tests
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── pyproject.toml
@@ -155,7 +225,7 @@ redtext-generator/
 - [ ] QR code phishing scenarios
 - [ ] Interactive TUI mode
 - [ ] HTML email export
-- [ ] GoPhish integration
+- [x] GoPhish integration
 - [ ] Localization (FR, ES, DE)
 - [ ] AI-powered scenario customization
 
