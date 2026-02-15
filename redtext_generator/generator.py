@@ -157,6 +157,7 @@ class RedtextGenerator:
             "{account_placeholder}": f"XXXX-XXXX-{random.randint(1000, 9999)}",
             "{reference}": f"PO-{_random_id(6)}",
             "{callback_number}": f"1-800-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+            "{transaction_id}": f"TXN-{_random_id(10)}",
             "{date}": _random_date_near(),
             "{invoice_number}": _random_id(8),
             "{generic_signature}": f"Billing Department, {self.company_name}",
