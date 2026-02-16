@@ -311,6 +311,49 @@ Please note: refund requests must be submitted within 48 hours of the charge.
 ]
 
 # ═══════════════════════════════════════════════════════════════
+#  SMISHING (SMS PHISHING) TEMPLATES
+# ═══════════════════════════════════════════════════════════════
+
+SMISHING_TEMPLATES = [
+    {
+        "id": "account_verify",
+        "name": "Account Verification",
+        "messages": [
+            "[{company}] Your account has been locked due to suspicious activity. Verify now to restore access: {smishing_link}",
+            "[{company}] ALERT: Unusual sign-in detected on your {software} account. Confirm your identity: {smishing_link}",
+            "[{company}] Your account credentials expire today. Update immediately to avoid disruption: {smishing_link}",
+        ],
+    },
+    {
+        "id": "package_delivery",
+        "name": "Package Delivery",
+        "messages": [
+            "[{carrier}] Your package could not be delivered. Reschedule delivery: {smishing_link}",
+            "[{carrier}] Delivery attempted - address confirmation needed. Update here: {smishing_link}",
+            "[{carrier}] Package #{tracking_id} is held at facility. Pay ${small_fee} customs fee to release: {smishing_link}",
+        ],
+    },
+    {
+        "id": "mfa_code",
+        "name": "MFA / Verification Code",
+        "messages": [
+            "Your {software} verification code is {mfa_code}. If you didn't request this, secure your account: {smishing_link}",
+            "[{company}] Security code: {mfa_code}. If this wasn't you, report unauthorized access: {smishing_link}",
+            "{software} login attempt detected. Your one-time code is {mfa_code}. Not you? Act now: {smishing_link}",
+        ],
+    },
+    {
+        "id": "payment_alert",
+        "name": "Payment / Banking Alert",
+        "messages": [
+            "[{bank_name}] A payment of ${amount} was charged to your account. If unauthorized, dispute: {smishing_link}",
+            "[{bank_name}] FRAUD ALERT: ${amount} pending transaction. Approve or decline: {smishing_link}",
+            "[{company}] Your direct deposit of ${amount} failed. Update banking info: {smishing_link}",
+        ],
+    },
+]
+
+# ═══════════════════════════════════════════════════════════════
 #  VISHING SCRIPTS
 # ═══════════════════════════════════════════════════════════════
 

@@ -19,6 +19,7 @@ from .templates import (
     URGENCY_TRIGGERS,
     SEASONAL_HOOKS,
     PHISHING_TEMPLATES,
+    SMISHING_TEMPLATES,
     VISHING_SCRIPTS,
     PHYSICAL_PRETEXTS,
     PSYCH_PRINCIPLES,
@@ -199,7 +200,6 @@ class RedtextGenerator:
 
     def generate_vishing_script(self, script_id: Optional[str] = None) -> dict:
         """Generate a vishing call script."""
-        # TODO: Your code here
         if script_id:
             script = next((s for s in VISHING_SCRIPTS if s["id"] == script_id), None)
             if not script:
@@ -218,7 +218,6 @@ class RedtextGenerator:
             "{department}": department,
             "{manager_name}": manager_name,
             "{software}": software,
-            # TODO: Fill in the rest
             "{issue}": random.choice(["unusual login activity", "a failed security scan", "unpatched software vulnerabilities", "anomalous network traffic"]),
             "{ticket_number}": f"TCKT-{_random_id(8)}",
             "{time}": f"{random.randint(1, 12)}:{random.choice(['00', '15', '30', '45'])} {random.choice(['AM', 'PM'])}",
@@ -322,7 +321,72 @@ class RedtextGenerator:
         }
 
     # ───────────────────────────────────────────────────────
-    #  METHOD 4: generate_full_scenario
+    #  METHOD 4: generate_smishing_message
+    # ───────────────────────────────────────────────────────
+    #
+    # This method:
+    # 1. Selects a smishing template (uses template_id if provided).
+    # 2. Picks a random message variant from the template.
+    # 3. Generates target info, short link, and dynamic values.
+    # 4. Replaces all {placeholders} in the message.
+    # 5. Returns a dict with: type, template name, message,
+    #    target info, attacker persona, urgency level,
+    #    short code, and malicious link.
+
+    def generate_smishing_message(self, template_id: Optional[str] = None) -> dict:
+        """Generate a smishing (SMS phishing) scenario."""
+        if template_id:
+            template = next((t for t in SMISHING_TEMPLATES if t["id"] == template_id), None)
+            if not template:
+                template = random.choice(SMISHING_TEMPLATES)
+        else:
+            template = random.choice(SMISHING_TEMPLATES)
+
+        software = random.choice(self.industry["software"])
+        department = random.choice(self.industry["departments"])
+        target_name = _random_name()
+        first_name = target_name.split()[0]
+        persona_title = random.choice(self.persona["titles"])
+
+        short_code = str(random.randint(10000, 99999))
+        domain = random.choice(["verify-now.co", "secure-alert.info", "acct-update.net", "pkg-track.com", "confirm-id.org"])
+        smishing_link = f"https://{domain}/{_random_id(8)}"
+
+        replacements = {
+            "{first_name}": first_name,
+            "{company}": self.company_name,
+            "{software}": software,
+            "{department}": department,
+            "{smishing_link}": smishing_link,
+            "{carrier}": random.choice(["USPS", "FedEx", "UPS", "DHL"]),
+            "{tracking_id}": f"{_random_id(4)}-{_random_id(4)}-{_random_id(4)}",
+            "{small_fee}": f"{random.randint(1, 9)}.{random.choice(['49', '95', '99'])}",
+            "{mfa_code}": _random_id(6),
+            "{bank_name}": random.choice(["Chase", "Wells Fargo", "Bank of America", "Citi"]),
+            "{amount}": f"{random.randint(50, 5000):,}",
+        }
+
+        message = random.choice(template["messages"])
+        for key, val in replacements.items():
+            message = message.replace(key, val)
+
+        return {
+            "type": "smishing",
+            "template": template["name"],
+            "message": message,
+            "target": {
+                "name": target_name,
+                "department": department,
+                "company": self.company_name,
+            },
+            "attacker_persona": persona_title,
+            "urgency_level": self.urgency,
+            "short_code": short_code,
+            "malicious_link": smishing_link,
+        }
+
+    # ───────────────────────────────────────────────────────
+    #  METHOD 5: generate_full_scenario
     # ───────────────────────────────────────────────────────
     #
     # This method:
@@ -334,7 +398,6 @@ class RedtextGenerator:
 
     def generate_full_scenario(self) -> dict:
         """Generate a complete multi-vector attack scenario."""
-        # TODO: Your code here
         operation_name = f"Operation {random.choice(['SHADOW', 'IRON', 'SILVER', 'GOLDEN', 'CRIMSON'])} {random.choice(['GATE', 'SPEAR', 'WAVE', 'FANG', 'BLADE'])}"
         quarter = _get_quarter()
         seasonal_hook = random.choice(SEASONAL_HOOKS[quarter])

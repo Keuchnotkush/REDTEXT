@@ -48,6 +48,9 @@ That's it. No `pip install` required — runs on Python 3.8+ with stdlib only.
 # Generate a phishing email targeting finance with high urgency
 python -m redtext_generator phishing --industry finance --urgency high
 
+# Generate a smishing (SMS phishing) message targeting finance
+python -m redtext_generator smishing --industry finance --urgency critical
+
 # Generate a vishing script as a vendor impersonator
 python -m redtext_generator vishing --persona vendor --company "Acme Corp"
 
@@ -66,6 +69,7 @@ python -m redtext_generator list
 | Mode | Command | Output |
 |------|---------|--------|
 | 📧 Phishing | `phishing` | Email with subject, body, IoCs |
+| 📱 Smishing | `smishing` | SMS message with malicious link, short code |
 | 📞 Vishing | `vishing` | Call script with opening, escalation, objectives |
 | 🏢 Physical | `physical` | Cover identity, props, script, target areas |
 | ⚔️ Full | `full` | Multi-phase attack: recon → phishing → vishing → physical |
@@ -221,7 +225,7 @@ redtext-generator/
 
 ## Roadmap
 
-- [ ] SMS/Smishing templates
+- [x] SMS/Smishing templates
 - [ ] QR code phishing scenarios
 - [ ] Interactive TUI mode
 - [ ] HTML email export

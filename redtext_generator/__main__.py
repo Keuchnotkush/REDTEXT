@@ -11,6 +11,7 @@ import random
 from .generator import RedtextGenerator
 from .formatters import (
     format_phishing_email,
+    format_smishing_message,
     format_vishing_script,
     format_physical_pretext,
     format_full_scenario,
@@ -42,7 +43,8 @@ BANNER = f"""
   ║{Colors.RESET} {Colors.BOLD}  ◢◤ SOCIAL ENGINEERING SCENARIO BUILDER ◢◤{Colors.RESET}             {Colors.RED}║
   ║{Colors.RESET}                                                          {Colors.RED}║
   ║{Colors.RESET}  {Colors.DIM}  ▸ Phishing Emails    ▸ Vishing Scripts{Colors.RESET}              {Colors.RED}║
-  ║{Colors.RESET}  {Colors.DIM}  ▸ Physical Pretexts   ▸ Full Attack Scenarios{Colors.RESET}       {Colors.RED}║
+  ║{Colors.RESET}  {Colors.DIM}  ▸ SMS/Smishing        ▸ Physical Pretexts{Colors.RESET}           {Colors.RED}║
+  ║{Colors.RESET}  {Colors.DIM}  ▸ Full Attack Scenarios{Colors.RESET}                             {Colors.RED}║
   ║{Colors.RESET}                                                          {Colors.RED}║
   ║{Colors.RESET}  {Colors.YELLOW}  "Some data is too dangerous to record."{Colors.RESET}            {Colors.RED}║
   ║{Colors.RESET}  {Colors.DIM}                          — SCP-2521{Colors.RESET}                  {Colors.RED}║
@@ -101,6 +103,7 @@ def cmd_generate(args):
 
     messages = {
         "phishing": "Crafting phishing email",
+        "smishing": "Crafting smishing message",
         "vishing": "Building vishing script",
         "physical": "Preparing physical pretext",
         "full": "Assembling full attack scenario",
@@ -110,6 +113,9 @@ def cmd_generate(args):
     if args.command == "phishing":
         data = gen.generate_phishing_email(template_id=args.template)
         output = format_phishing_email(data)
+    elif args.command == "smishing":
+        data = gen.generate_smishing_message(template_id=args.template)
+        output = format_smishing_message(data)
     elif args.command == "vishing":
         data = gen.generate_vishing_script(script_id=args.template)
         output = format_vishing_script(data)
@@ -304,6 +310,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Examples:\n"
                "  redtext-gen phishing --industry finance --urgency high\n"
+               "  redtext-gen smishing --industry finance --urgency critical\n"
                "  redtext-gen vishing --persona vendor --company 'Acme Corp'\n"
                "  redtext-gen physical --industry healthcare\n"
                "  redtext-gen full --industry tech --urgency critical\n"
@@ -334,7 +341,8 @@ def main():
         p.add_argument("--export-md", default=None, metavar="FILE",
                        help="Export scenario as Markdown")
 
-    for name, desc in [("phishing", "Generate phishing email"), ("vishing", "Generate vishing call script"),
+    for name, desc in [("phishing", "Generate phishing email"), ("smishing", "Generate smishing (SMS) message"),
+                       ("vishing", "Generate vishing call script"),
                        ("physical", "Generate physical access pretext"), ("full", "Generate full attack scenario")]:
         add_common_args(subparsers.add_parser(name, help=desc))
 

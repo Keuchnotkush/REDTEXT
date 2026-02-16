@@ -116,6 +116,29 @@ def format_vishing_script(data: dict) -> str:
     return "\n".join(lines)
 
 
+def format_smishing_message(data: dict) -> str:
+    lines = []
+    lines.append(_header("SMS/SMISHING SCENARIO"))
+    lines.append("")
+    lines.append(_field("Template", data["template"]))
+    lines.append(_field("Attacker Persona", data["attacker_persona"]))
+    lines.append(_field("Urgency", _c(data["urgency_level"].upper(), Colors.RED if data["urgency_level"] in ("high", "critical") else Colors.YELLOW)))
+    lines.append("")
+    lines.append(_field("Target Name", data["target"]["name"]))
+    lines.append(_field("Target Dept", data["target"]["department"]))
+    lines.append(_field("Target Company", data["target"]["company"]))
+    lines.append("")
+    lines.append(_field("Short Code", data["short_code"]))
+    lines.append(_field("Malicious Link", _c(data["malicious_link"], Colors.RED)))
+    lines.append("")
+    lines.append(f"  {_c('▸ SMS MESSAGE', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append(f"    {data['message']}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def format_physical_pretext(data: dict) -> str:
     lines = []
     lines.append(_header("🏢 PHYSICAL ACCESS PRETEXT"))
@@ -199,6 +222,8 @@ def export_markdown(data: dict, filepath: str) -> str:
 
     if data.get("type") == "phishing_email":
         content = format_phishing_email(data)
+    elif data.get("type") == "smishing":
+        content = format_smishing_message(data)
     elif data.get("type") == "vishing_script":
         content = format_vishing_script(data)
     elif data.get("type") == "physical_pretext":

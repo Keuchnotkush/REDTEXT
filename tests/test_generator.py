@@ -353,5 +353,68 @@ class TestGenerateFullScenario(unittest.TestCase):
         self.assertIn(result["quarter"], ("q1", "q2", "q3", "q4"))
 
 
+# ── Smishing generation tests ────────────────────────────────
+
+class TestGenerateSmishingMessage(unittest.TestCase):
+    def setUp(self):
+        random.seed(42)
+        self.gen = RedtextGenerator()
+
+    def test_required_keys(self):
+        result = self.gen.generate_smishing_message()
+        for key in ("type", "template", "message", "target", "attacker_persona",
+                     "urgency_level", "short_code", "malicious_link"):
+            self.assertIn(key, result, f"Missing key: {key}")
+
+    def test_target_keys(self):
+        result = self.gen.generate_smishing_message()
+        for key in ("name", "department", "company"):
+            self.assertIn(key, result["target"], f"Missing target key: {key}")
+
+    def test_type_value(self):
+        result = self.gen.generate_smishing_message()
+        self.assertEqual(result["type"], "smishing")
+
+    def test_company_name_in_target(self):
+        gen = RedtextGenerator(company_name="TestCorp")
+        result = gen.generate_smishing_message()
+        self.assertEqual(result["target"]["company"], "TestCorp")
+
+    def test_no_leftover_placeholders(self):
+        for _ in range(20):
+            result = self.gen.generate_smishing_message()
+            self.assertNotRegex(result["message"], r"\{[a-z_]+\}",
+                                f"Leftover placeholder in message: {result['message']}")
+
+    def test_specific_template_id(self):
+        result = self.gen.generate_smishing_message(template_id="account_verify")
+        self.assertEqual(result["template"], "Account Verification")
+
+    def test_invalid_template_id_no_crash(self):
+        result = self.gen.generate_smishing_message(template_id="nonexistent_template")
+        self.assertIn("type", result)
+
+    def test_seed_determinism(self):
+        random.seed(99)
+        result1 = RedtextGenerator().generate_smishing_message()
+        random.seed(99)
+        result2 = RedtextGenerator().generate_smishing_message()
+        self.assertEqual(result1["message"], result2["message"])
+
+    def test_all_industries(self):
+        for industry in INDUSTRIES:
+            gen = RedtextGenerator(industry=industry)
+            result = gen.generate_smishing_message()
+            self.assertEqual(result["type"], "smishing")
+
+    def test_short_code_is_numeric(self):
+        result = self.gen.generate_smishing_message()
+        self.assertTrue(result["short_code"].isdigit())
+
+    def test_malicious_link_is_url(self):
+        result = self.gen.generate_smishing_message()
+        self.assertTrue(result["malicious_link"].startswith("https://"))
+
+
 if __name__ == "__main__":
     unittest.main()
