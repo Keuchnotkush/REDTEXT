@@ -139,6 +139,46 @@ def format_smishing_message(data: dict) -> str:
     return "\n".join(lines)
 
 
+def format_quishing_scenario(data: dict) -> str:
+    lines = []
+    lines.append(_header("QR CODE PHISHING (QUISHING) SCENARIO"))
+    lines.append("")
+    lines.append(_field("Template", data["template"]))
+    lines.append(_field("Attacker Persona", data["attacker_persona"]))
+    lines.append(_field("Urgency", _c(data["urgency_level"].upper(), Colors.RED if data["urgency_level"] in ("high", "critical") else Colors.YELLOW)))
+    lines.append("")
+    lines.append(_field("Target Name", data["target"]["name"]))
+    lines.append(_field("Target Dept", data["target"]["department"]))
+    lines.append(_field("Target Company", data["target"]["company"]))
+    lines.append("")
+    lines.append(_field("Delivery Method", data["delivery_method"]))
+    lines.append(_field("Malicious Link", _c(data["malicious_link"], Colors.RED)))
+    lines.append("")
+
+    lines.append(f"  {_c('▸ PRETEXT (TEXT NEAR QR CODE)', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    for line in data["pretext_text"].split("\n"):
+        lines.append(f"    {line}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ QR CODE', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    for line in data["qr_ascii"].split("\n"):
+        lines.append(f"    {line}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ PLACEMENT SUGGESTIONS', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(_list_items(data["placement_suggestions"]))
+    lines.append("")
+
+    lines.append(f"  {_c('▸ OBJECTIVES', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(_list_items(data["objectives"]))
+    lines.append("")
+    return "\n".join(lines)
+
+
 def format_physical_pretext(data: dict) -> str:
     lines = []
     lines.append(_header("🏢 PHYSICAL ACCESS PRETEXT"))
@@ -224,6 +264,8 @@ def export_markdown(data: dict, filepath: str) -> str:
         content = format_phishing_email(data)
     elif data.get("type") == "smishing":
         content = format_smishing_message(data)
+    elif data.get("type") == "quishing":
+        content = format_quishing_scenario(data)
     elif data.get("type") == "vishing_script":
         content = format_vishing_script(data)
     elif data.get("type") == "physical_pretext":

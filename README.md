@@ -51,6 +51,9 @@ python -m redtext_generator phishing --industry finance --urgency high
 # Generate a smishing (SMS phishing) message targeting finance
 python -m redtext_generator smishing --industry finance --urgency critical
 
+# Generate a QR code phishing (quishing) scenario with ASCII QR
+python -m redtext_generator quishing --industry tech --urgency high
+
 # Generate a vishing script as a vendor impersonator
 python -m redtext_generator vishing --persona vendor --company "Acme Corp"
 
@@ -70,6 +73,7 @@ python -m redtext_generator list
 |------|---------|--------|
 | 📧 Phishing | `phishing` | Email with subject, body, IoCs |
 | 📱 Smishing | `smishing` | SMS message with malicious link, short code |
+| 📲 Quishing | `quishing` | QR code scenario with ASCII QR, pretext, placement |
 | 📞 Vishing | `vishing` | Call script with opening, escalation, objectives |
 | 🏢 Physical | `physical` | Cover identity, props, script, target areas |
 | ⚔️ Full | `full` | Multi-phase attack: recon → phishing → vishing → physical |
@@ -208,6 +212,7 @@ redtext-generator/
 │   ├── templates.py         # Industries, personas, email/vishing/physical templates
 │   ├── generator.py         # Core engine — assembles scenarios from templates
 │   ├── formatters.py        # Terminal display (ANSI colors) + JSON/Markdown export
+│   ├── qrencode.py          # Minimal QR code encoder (pure Python)
 │   ├── gophish.py           # GoPhish API client (urllib)
 │   ├── gophish_bridge.py    # REDTEXT → GoPhish data conversion
 │   └── config.py            # Config management (INI + env vars + CLI)
@@ -216,6 +221,7 @@ redtext-generator/
 │   ├── test_formatters.py
 │   ├── test_cli.py
 │   ├── test_templates.py
+│   ├── test_qrencode.py     # QR encoder tests
 │   └── test_gophish.py      # GoPhish integration tests
 ├── CONTRIBUTING.md
 ├── LICENSE
@@ -226,7 +232,7 @@ redtext-generator/
 ## Roadmap
 
 - [x] SMS/Smishing templates
-- [ ] QR code phishing scenarios
+- [x] QR code phishing scenarios
 - [ ] Interactive TUI mode
 - [ ] HTML email export
 - [x] GoPhish integration

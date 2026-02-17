@@ -354,6 +354,65 @@ SMISHING_TEMPLATES = [
 ]
 
 # ═══════════════════════════════════════════════════════════════
+#  QUISHING (QR CODE PHISHING) TEMPLATES
+# ═══════════════════════════════════════════════════════════════
+
+QUISHING_TEMPLATES = [
+    {
+        "id": "wifi_portal",
+        "name": "Guest Wi-Fi Portal",
+        "pretext_text": "GUEST WI-FI ACCESS\n\nScan the QR code below to connect to {company} Guest Network.\nA valid company email is required for authentication.\n\nNetwork: {company}-Guest\nSupport: {support_email}",
+        "delivery_methods": ["Laminated poster in lobby", "Tent card on conference table", "Sticker near reception desk", "Digital signage in waiting area"],
+        "placement_suggestions": ["Lobby and reception areas", "Conference rooms", "Visitor waiting areas", "Co-working spaces", "Cafeteria and break rooms"],
+        "objectives": [
+            "Harvest corporate email credentials via fake captive portal",
+            "Capture MFA tokens through real-time phishing proxy",
+            "Collect device information from connecting clients",
+            "Establish man-in-the-middle position on victim traffic",
+        ],
+    },
+    {
+        "id": "parking_payment",
+        "name": "Parking Payment Kiosk",
+        "pretext_text": "PARKING PAYMENT\n\nScan to pay for parking — contactless and fast.\nAccepted: Visa, Mastercard, Apple Pay\n\nZone: {parking_zone}\nRate: ${parking_rate}/hr\nLot: {company} {department} Building",
+        "delivery_methods": ["Sticker placed over legitimate QR on parking meter", "Flyer on car windshields in parking garage", "Posted sign near parking garage entrance", "Printed card left on parking payment kiosk"],
+        "placement_suggestions": ["Company parking garage", "Visitor parking lot", "Street parking meters near target building", "Employee parking structure"],
+        "objectives": [
+            "Harvest payment card details via fake payment page",
+            "Collect personal information (name, email, phone)",
+            "Link payment info to employee identities for targeted follow-up",
+            "Test physical security awareness of employees in parking areas",
+        ],
+    },
+    {
+        "id": "document_access",
+        "name": "Shared Document Access",
+        "pretext_text": "CONFIDENTIAL — {department} ONLY\n\nScan to access: {document_name}\nShared by: {sender_name}, {sender_title}\n\nThis document requires {software} authentication.\nLink expires: {deadline}",
+        "delivery_methods": ["Printed memo left on desks or in mailboxes", "Embedded in a phishing email as an image", "Posted on internal bulletin board", "Included in a printed meeting agenda"],
+        "placement_suggestions": ["Department printer trays", "Shared mailboxes and cubbies", "Conference room tables before meetings", "Posted on team bulletin boards", "Left in break room"],
+        "objectives": [
+            "Harvest SSO/corporate credentials via fake login page",
+            "Deliver malware through fake document download",
+            "Capture session tokens through phishing proxy",
+            "Test employee response to physical social engineering artifacts",
+        ],
+    },
+    {
+        "id": "employee_verify",
+        "name": "Employee Badge Verification",
+        "pretext_text": "NOTICE: MANDATORY BADGE VERIFICATION\n\nAll {department} employees must verify their badge is active.\nScan the QR code below and log in with your {software} credentials.\n\nDeadline: {deadline}\nNon-compliance will result in temporary access suspension.\n\nIT Security — {company}",
+        "delivery_methods": ["Posted near badge readers and building entrances", "Printed flyer in elevator or stairwell", "Notice posted in break room", "Handed out by physical social engineer posing as security"],
+        "placement_suggestions": ["Building entrance near badge reader", "Elevator lobbies on each floor", "Break rooms and kitchens", "HR bulletin board", "Near restricted access doors"],
+        "objectives": [
+            "Harvest employee credentials through urgency and authority",
+            "Map badge reader locations and employee access patterns",
+            "Test compliance with unverified security notices",
+            "Collect employee names and department info from form submissions",
+        ],
+    },
+]
+
+# ═══════════════════════════════════════════════════════════════
 #  VISHING SCRIPTS
 # ═══════════════════════════════════════════════════════════════
 

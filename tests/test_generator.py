@@ -416,5 +416,81 @@ class TestGenerateSmishingMessage(unittest.TestCase):
         self.assertTrue(result["malicious_link"].startswith("https://"))
 
 
+# ── Quishing generation tests ────────────────────────────────
+
+class TestGenerateQuishingScenario(unittest.TestCase):
+    def setUp(self):
+        random.seed(42)
+        self.gen = RedtextGenerator()
+
+    def test_required_keys(self):
+        result = self.gen.generate_quishing_scenario()
+        for key in ("type", "template", "pretext_text", "delivery_method",
+                     "placement_suggestions", "objectives", "target",
+                     "attacker_persona", "urgency_level", "malicious_link", "qr_ascii"):
+            self.assertIn(key, result, f"Missing key: {key}")
+
+    def test_target_keys(self):
+        result = self.gen.generate_quishing_scenario()
+        for key in ("name", "department", "company"):
+            self.assertIn(key, result["target"], f"Missing target key: {key}")
+
+    def test_type_value(self):
+        result = self.gen.generate_quishing_scenario()
+        self.assertEqual(result["type"], "quishing")
+
+    def test_company_name_in_target(self):
+        gen = RedtextGenerator(company_name="TestCorp")
+        result = gen.generate_quishing_scenario()
+        self.assertEqual(result["target"]["company"], "TestCorp")
+
+    def test_no_leftover_placeholders(self):
+        for _ in range(20):
+            result = self.gen.generate_quishing_scenario()
+            self.assertNotRegex(result["pretext_text"], r"\{[a-z_]+\}",
+                                f"Leftover placeholder in pretext: {result['pretext_text']}")
+
+    def test_specific_template_id(self):
+        result = self.gen.generate_quishing_scenario(template_id="wifi_portal")
+        self.assertEqual(result["template"], "Guest Wi-Fi Portal")
+
+    def test_invalid_template_id_no_crash(self):
+        result = self.gen.generate_quishing_scenario(template_id="nonexistent_template")
+        self.assertIn("type", result)
+
+    def test_seed_determinism(self):
+        random.seed(99)
+        result1 = RedtextGenerator().generate_quishing_scenario()
+        random.seed(99)
+        result2 = RedtextGenerator().generate_quishing_scenario()
+        self.assertEqual(result1["pretext_text"], result2["pretext_text"])
+        self.assertEqual(result1["qr_ascii"], result2["qr_ascii"])
+
+    def test_all_industries(self):
+        for industry in INDUSTRIES:
+            gen = RedtextGenerator(industry=industry)
+            result = gen.generate_quishing_scenario()
+            self.assertEqual(result["type"], "quishing")
+
+    def test_qr_ascii_non_empty(self):
+        result = self.gen.generate_quishing_scenario()
+        self.assertIsInstance(result["qr_ascii"], str)
+        self.assertTrue(len(result["qr_ascii"]) > 0)
+
+    def test_malicious_link_is_url(self):
+        result = self.gen.generate_quishing_scenario()
+        self.assertTrue(result["malicious_link"].startswith("https://"))
+
+    def test_placement_suggestions_non_empty(self):
+        result = self.gen.generate_quishing_scenario()
+        self.assertIsInstance(result["placement_suggestions"], list)
+        self.assertTrue(len(result["placement_suggestions"]) > 0)
+
+    def test_objectives_non_empty(self):
+        result = self.gen.generate_quishing_scenario()
+        self.assertIsInstance(result["objectives"], list)
+        self.assertTrue(len(result["objectives"]) > 0)
+
+
 if __name__ == "__main__":
     unittest.main()

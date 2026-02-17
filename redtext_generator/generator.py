@@ -20,11 +20,13 @@ from .templates import (
     SEASONAL_HOOKS,
     PHISHING_TEMPLATES,
     SMISHING_TEMPLATES,
+    QUISHING_TEMPLATES,
     VISHING_SCRIPTS,
     PHYSICAL_PRETEXTS,
     PSYCH_PRINCIPLES,
     FAKE_DOCUMENTS,
 )
+from . import qrencode
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -386,7 +388,75 @@ class RedtextGenerator:
         }
 
     # ───────────────────────────────────────────────────────
-    #  METHOD 5: generate_full_scenario
+    #  METHOD 5: generate_quishing_scenario
+    # ───────────────────────────────────────────────────────
+    #
+    # This method:
+    # 1. Selects a quishing template (uses template_id if provided).
+    # 2. Generates a malicious URL and QR code (ASCII art).
+    # 3. Replaces {placeholders} in the pretext text.
+    # 4. Returns a dict with: type, template name, pretext text,
+    #    delivery method, placement, objectives, target info,
+    #    attacker persona, urgency level, malicious link, and QR ASCII.
+
+    def generate_quishing_scenario(self, template_id: Optional[str] = None) -> dict:
+        """Generate a quishing (QR code phishing) scenario."""
+        if template_id:
+            template = next((t for t in QUISHING_TEMPLATES if t["id"] == template_id), None)
+            if not template:
+                template = random.choice(QUISHING_TEMPLATES)
+        else:
+            template = random.choice(QUISHING_TEMPLATES)
+
+        software = random.choice(self.industry["software"])
+        department = random.choice(self.industry["departments"])
+        target_name = _random_name()
+        persona_title = random.choice(self.persona["titles"])
+
+        domain = random.choice(["secure-portal.co", "wifi-connect.net", "pay-verify.com", "doc-access.org", "id-check.info"])
+        malicious_link = f"https://{domain}/{_random_id(8)}"
+
+        replacements = {
+            "{company}": self.company_name,
+            "{software}": software,
+            "{department}": department,
+            "{support_email}": f"it-support@{self.company_name.lower().replace(' ', '')}.com",
+            "{parking_zone}": random.choice(["A", "B", "C", "D"]),
+            "{parking_rate}": str(random.randint(2, 8)),
+            "{document_name}": random.choice(FAKE_DOCUMENTS),
+            "{sender_name}": _random_name(),
+            "{sender_title}": random.choice(self.persona["titles"]),
+            "{deadline}": random.choice(["24 hours", "end of business today", "Friday at 5:00 PM", _random_date_near()]),
+        }
+
+        pretext = template["pretext_text"]
+        for key, val in replacements.items():
+            pretext = pretext.replace(key, val)
+
+        # Generate QR code
+        matrix = qrencode.encode(malicious_link)
+        qr_ascii = qrencode.render_ascii(matrix)
+
+        return {
+            "type": "quishing",
+            "template": template["name"],
+            "pretext_text": pretext,
+            "delivery_method": random.choice(template["delivery_methods"]),
+            "placement_suggestions": template["placement_suggestions"],
+            "objectives": template["objectives"],
+            "target": {
+                "name": target_name,
+                "department": department,
+                "company": self.company_name,
+            },
+            "attacker_persona": persona_title,
+            "urgency_level": self.urgency,
+            "malicious_link": malicious_link,
+            "qr_ascii": qr_ascii,
+        }
+
+    # ───────────────────────────────────────────────────────
+    #  METHOD 6: generate_full_scenario
     # ───────────────────────────────────────────────────────
     #
     # This method:
