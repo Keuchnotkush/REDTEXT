@@ -356,7 +356,7 @@ def _apply_mask(matrix, matrix_template, pattern, size):
 
 
 def _penalty_score(matrix, size):
-    """Calculate mask penalty score (simplified — rules 1 and 3)."""
+    """Calculate mask penalty score (simplified — rules 1 and 2)."""
     score = 0
     # Rule 1: runs of same color (rows and cols)
     for r in range(size):
