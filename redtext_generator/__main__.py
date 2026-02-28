@@ -26,6 +26,16 @@ from .formatters import (
 from .templates import INDUSTRIES, PERSONAS, URGENCY_TRIGGERS, PSYCH_PRINCIPLES
 
 
+SCENARIO_TYPES = [
+    ("phishing",  "Phishing Email",          "generate_phishing_email",    format_phishing_email),
+    ("smishing",  "Smishing (SMS) Message",  "generate_smishing_message",  format_smishing_message),
+    ("quishing",  "QR Code Phishing",        "generate_quishing_scenario", format_quishing_scenario),
+    ("vishing",   "Vishing Call Script",      "generate_vishing_script",    format_vishing_script),
+    ("physical",  "Physical Access Pretext",  "generate_physical_pretext",  format_physical_pretext),
+    ("full",      "Full Attack Scenario",     "generate_full_scenario",     format_full_scenario),
+]
+
+
 BANNER = f"""
 {Colors.RED}
   ██████╗ ███████╗██████╗ ████████╗███████╗██╗  ██╗████████╗
@@ -66,6 +76,89 @@ DISCLAIMER = f"""
 
   The authors assume NO liability for misuse of this tool.{Colors.RESET}
 """
+
+
+def _menu_prompt(title, options):
+    """Display a numbered menu and return the selected index (0-based)."""
+    print(_c(f"\n  {title}:", Colors.BOLD + Colors.CYAN))
+    for i, label in enumerate(options, 1):
+        print(f"    {_c(str(i), Colors.YELLOW)}. {label}")
+    while True:
+        choice = input(_c("\n  > ", Colors.GREEN)).strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(options):
+            return int(choice) - 1
+        print(_c("    Invalid choice. Try again.", Colors.RED))
+
+
+def _text_prompt(label, default):
+    """Prompt for text input with a default value."""
+    val = input(_c(f"\n  {label} [{default}]: ", Colors.GREEN)).strip()
+    return val if val else default
+
+
+def _interactive_header():
+    """Print a compact header for interactive mode."""
+    print(_c("\n  ╔══════════════════════════════════════════╗", Colors.RED))
+    print(_c("  ║", Colors.RED) + _c("  REDTEXT Interactive Builder  ", Colors.BOLD) + _c("          ║", Colors.RED))
+    print(_c("  ╚══════════════════════════════════════════╝", Colors.RED))
+
+
+def cmd_interactive(args):
+    """Interactive wizard for building scenarios."""
+    industry_keys = list(INDUSTRIES.keys())
+    industry_labels = [INDUSTRIES[k]["name"] for k in industry_keys]
+
+    urgency_keys = list(URGENCY_TRIGGERS.keys())
+    urgency_labels = [k.replace("_", " ").title() for k in urgency_keys]
+
+    persona_keys = list(PERSONAS.keys())
+    persona_labels = [PERSONAS[k]["name"] for k in persona_keys]
+
+    scenario_labels = [s[1] for s in SCENARIO_TYPES]
+
+    while True:
+        _interactive_header()
+
+        idx = _menu_prompt("Select scenario type", scenario_labels)
+        key, label, gen_method, fmt_func = SCENARIO_TYPES[idx]
+
+        ind_idx = _menu_prompt("Select target industry", industry_labels)
+        urg_idx = _menu_prompt("Select urgency level", urgency_labels)
+        per_idx = _menu_prompt("Select attacker persona", persona_labels)
+        company = _text_prompt("Target company name", "Target Corp")
+
+        gen = RedtextGenerator(
+            industry=industry_keys[ind_idx],
+            urgency=urgency_keys[urg_idx],
+            persona=persona_keys[per_idx],
+            company_name=company,
+        )
+
+        loading_animation(f"Generating {label}", 1.5)
+        data = getattr(gen, gen_method)()
+        print(fmt_func(data))
+
+        while True:
+            action = _menu_prompt("What next?", [
+                "Export JSON", "Export Markdown", "Export HTML",
+                "Generate Another", "Quit",
+            ])
+            if action == 0:
+                path = _text_prompt("Filename", "scenario.json")
+                path = export_json(data, path)
+                print(_c(f"\n  Exported JSON: {path}", Colors.YELLOW))
+            elif action == 1:
+                path = _text_prompt("Filename", "scenario.md")
+                path = export_markdown(data, path)
+                print(_c(f"\n  Exported Markdown: {path}", Colors.YELLOW))
+            elif action == 2:
+                path = _text_prompt("Filename", "scenario.html")
+                path = export_html(data, path)
+                print(_c(f"\n  Exported HTML: {path}", Colors.YELLOW))
+            elif action == 3:
+                break
+            elif action == 4:
+                return
 
 
 def cmd_list(args):
@@ -386,6 +479,8 @@ def main():
                        ("physical", "Generate physical access pretext"), ("full", "Generate full attack scenario")]:
         add_common_args(subparsers.add_parser(name, help=desc))
 
+    subparsers.add_parser("interactive", help="Interactive scenario builder wizard")
+
     # ── GoPhish integration subcommands ────────────────────────
     gophish_parser = subparsers.add_parser("gophish", help="GoPhish integration commands")
     gophish_sub = gophish_parser.add_subparsers(dest="gophish_command")
@@ -433,6 +528,11 @@ def main():
         cmd_list(args)
     elif args.command == "gophish":
         cmd_gophish(args)
+    elif args.command == "interactive":
+        try:
+            cmd_interactive(args)
+        except KeyboardInterrupt:
+            print(_c("\n\n  Session ended.\n", Colors.DIM))
     else:
         if not getattr(args, "no_disclaimer", False):
             print(DISCLAIMER)

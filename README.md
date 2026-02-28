@@ -63,6 +63,9 @@ python -m redtext_generator physical --industry healthcare
 # Generate a complete multi-phase attack scenario
 python -m redtext_generator full --industry tech --urgency critical --company "Target Inc"
 
+# Launch interactive wizard (step-by-step prompts)
+python -m redtext_generator interactive
+
 # List all available industries, personas, and options
 python -m redtext_generator list
 ```
@@ -77,6 +80,7 @@ python -m redtext_generator list
 | 📞 Vishing | `vishing` | Call script with opening, escalation, objectives |
 | 🏢 Physical | `physical` | Cover identity, props, script, target areas |
 | ⚔️ Full | `full` | Multi-phase attack: recon → phishing → vishing → physical |
+| 🧙 Interactive | `interactive` | Step-by-step wizard with menus |
 | 📋 List | `list` | All available options |
 
 ## Options
@@ -237,7 +241,7 @@ redtext-generator/
 
 - [x] SMS/Smishing templates
 - [x] QR code phishing scenarios
-- [ ] Interactive TUI mode
+- [x] Interactive TUI mode
 - [x] HTML email export
 - [x] GoPhish integration
 - [ ] Localization (FR, ES, DE)
