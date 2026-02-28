@@ -7,6 +7,35 @@ target CSVs into group payloads.
 """
 
 import csv
+import re
+
+# Basic email format validation
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+# Characters that can trigger formula injection in spreadsheet apps
+_INJECTION_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _validate_target(target, row_num):
+    """Validate a single target dict for unsafe or malformed data.
+
+    Args:
+        target: Dict with email, first_name, last_name, position.
+        row_num: 1-based row number for error messages.
+
+    Raises:
+        ValueError: If email is invalid or fields contain injection payloads.
+    """
+    email = target["email"]
+    if not _EMAIL_RE.match(email):
+        raise ValueError(f"Row {row_num}: invalid email format: {email!r}")
+
+    for field, value in target.items():
+        if value and value[0] in _INJECTION_PREFIXES:
+            raise ValueError(
+                f"Row {row_num}: suspicious value in '{field}': {value!r} "
+                "(starts with formula injection character)"
+            )
 
 
 def text_to_html(text):
@@ -103,13 +132,15 @@ def parse_targets_csv(filepath):
             )
 
         targets = []
-        for row in reader:
-            targets.append({
+        for i, row in enumerate(reader, start=2):  # row 1 is header
+            target = {
                 "email": row["email"].strip(),
                 "first_name": row["first_name"].strip(),
                 "last_name": row["last_name"].strip(),
                 "position": row["position"].strip(),
-            })
+            }
+            _validate_target(target, row_num=i)
+            targets.append(target)
 
         if not targets:
             raise ValueError(f"CSV file has no data rows: {filepath}")

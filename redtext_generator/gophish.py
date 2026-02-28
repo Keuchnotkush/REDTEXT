@@ -7,6 +7,7 @@ JSON serialization, SSL context, and error translation.
 
 import json
 import ssl
+import time
 import urllib.error
 import urllib.request
 
@@ -30,9 +31,15 @@ class GoPhishClient:
                      self-signed certs commonly used by GoPhish.
     """
 
-    def __init__(self, api_url, api_key, verify_ssl=True):
+    # Transient HTTP status codes that should trigger a retry
+    _RETRYABLE_STATUS_CODES = {502, 503, 504, 429}
+
+    def __init__(self, api_url, api_key, verify_ssl=True, timeout=30,
+                 retries=3):
         self.api_url = api_url.rstrip("/")
         self.api_key = api_key
+        self.timeout = timeout
+        self.retries = retries
 
         if verify_ssl:
             self._ssl_context = ssl.create_default_context()
@@ -43,6 +50,9 @@ class GoPhishClient:
 
     def _request(self, method, endpoint, data=None):
         """Send an HTTP request to the GoPhish API.
+
+        Retries on transient errors (502, 503, 504, 429, connection failures)
+        with exponential backoff. Non-retryable errors fail immediately.
 
         Args:
             method: HTTP method (GET, POST, PUT, DELETE).
@@ -66,33 +76,51 @@ class GoPhishClient:
         if data is not None:
             body = json.dumps(data).encode("utf-8")
 
-        req = urllib.request.Request(url, data=body, headers=headers, method=method)
+        last_error = None
+        for attempt in range(self.retries):
+            req = urllib.request.Request(
+                url, data=body, headers=headers, method=method,
+            )
 
-        try:
-            with urllib.request.urlopen(req, context=self._ssl_context) as resp:
-                raw = resp.read().decode("utf-8")
-                if not raw:
-                    return {}
-                return json.loads(raw)
-        except urllib.error.HTTPError as e:
-            resp_body = ""
             try:
-                resp_body = e.read().decode("utf-8")
-            except Exception:
-                pass
-            msg = f"GoPhish API error (HTTP {e.code})"
-            try:
-                detail = json.loads(resp_body)
-                if "message" in detail:
-                    msg = f"{msg}: {detail['message']}"
-            except (json.JSONDecodeError, KeyError):
-                if resp_body:
-                    msg = f"{msg}: {resp_body}"
-            raise GoPhishAPIError(msg, status_code=e.code, response_body=resp_body)
-        except urllib.error.URLError as e:
-            raise GoPhishAPIError(f"Connection error: {e.reason}")
-        except json.JSONDecodeError as e:
-            raise GoPhishAPIError(f"Invalid JSON response: {e}")
+                with urllib.request.urlopen(
+                    req, context=self._ssl_context, timeout=self.timeout,
+                ) as resp:
+                    raw = resp.read().decode("utf-8")
+                    if not raw:
+                        return {}
+                    return json.loads(raw)
+            except urllib.error.HTTPError as e:
+                resp_body = ""
+                try:
+                    resp_body = e.read().decode("utf-8")
+                except Exception:
+                    pass
+                msg = f"GoPhish API error (HTTP {e.code})"
+                try:
+                    detail = json.loads(resp_body)
+                    if "message" in detail:
+                        msg = f"{msg}: {detail['message']}"
+                except (json.JSONDecodeError, KeyError):
+                    if resp_body:
+                        msg = f"{msg}: {resp_body}"
+                last_error = GoPhishAPIError(
+                    msg, status_code=e.code, response_body=resp_body,
+                )
+                # Only retry on transient server errors
+                if e.code not in self._RETRYABLE_STATUS_CODES:
+                    raise last_error
+            except urllib.error.URLError as e:
+                last_error = GoPhishAPIError(f"Connection error: {e.reason}")
+            except json.JSONDecodeError as e:
+                raise GoPhishAPIError(f"Invalid JSON response: {e}")
+
+            # Exponential backoff before retry
+            if attempt < self.retries - 1:
+                time.sleep(min(2 ** attempt, 8))
+
+        # All retries exhausted
+        raise last_error
 
     # ── Templates ──────────────────────────────────────────────
 
