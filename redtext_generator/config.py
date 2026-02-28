@@ -24,7 +24,14 @@ def save_gophish_config(api_url, api_key, verify_ssl=True):
         str: The path to the written config file.
     """
     path = get_config_path()
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    config_dir = os.path.dirname(path)
+    os.makedirs(config_dir, exist_ok=True)
+
+    # Restrict directory permissions (owner-only on Unix)
+    try:
+        os.chmod(config_dir, 0o700)
+    except OSError:
+        pass  # Windows doesn't support Unix permissions
 
     config = configparser.ConfigParser()
     config["gophish"] = {
@@ -35,6 +42,12 @@ def save_gophish_config(api_url, api_key, verify_ssl=True):
 
     with open(path, "w", encoding="utf-8") as f:
         config.write(f)
+
+    # Restrict file permissions — API key should not be world-readable
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass  # Windows doesn't support Unix permissions
 
     return path
 
