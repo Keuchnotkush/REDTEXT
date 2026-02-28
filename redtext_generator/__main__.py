@@ -182,6 +182,27 @@ def _gophish_setup():
     print(_c(f"\n  Configuration saved to {path}", Colors.GREEN))
 
 
+def _gophish_error(err):
+    """Print a contextual error message for GoPhish failures."""
+    from .gophish import GoPhishAPIError
+
+    if isinstance(err, ValueError):
+        print(_c(f"  Config error: {err}", Colors.RED))
+        print(_c("    Run 'redtext-gen gophish setup' to configure.", Colors.DIM))
+    elif isinstance(err, GoPhishAPIError):
+        print(_c(f"  API error: {err}", Colors.RED))
+        if err.status_code == 401:
+            print(_c("    Check your API key — it may be invalid or expired.", Colors.DIM))
+        elif err.status_code == 404:
+            print(_c("    Resource not found — verify the name exists in GoPhish.", Colors.DIM))
+        elif err.status_code and err.status_code >= 500:
+            print(_c("    GoPhish server error — check the server logs.", Colors.DIM))
+        elif "Connection error" in str(err) or "Connection refused" in str(err):
+            print(_c("    Is GoPhish running? Check the URL and port.", Colors.DIM))
+    else:
+        print(_c(f"  Error: {err}", Colors.RED))
+
+
 def _gophish_templates(args):
     """List templates from GoPhish server."""
     from .config import load_gophish_config
@@ -192,7 +213,7 @@ def _gophish_templates(args):
         client = GoPhishClient(config["api_url"], config["api_key"], config["verify_ssl"])
         templates = client.get_templates()
     except (ValueError, GoPhishAPIError) as e:
-        print(_c(f"  Error: {e}", Colors.RED))
+        _gophish_error(e)
         return
 
     print(_c("\n  GoPhish Templates:\n", Colors.BOLD + Colors.CYAN))
@@ -235,7 +256,7 @@ def _gophish_push(args):
             html=template_payload["html"],
         )
     except (ValueError, GoPhishAPIError) as e:
-        print(_c(f"  Error: {e}", Colors.RED))
+        _gophish_error(e)
         return
 
     print(_c(f"\n  Template created (ID: {result.get('id', 'unknown')})", Colors.GREEN))
@@ -253,7 +274,12 @@ def _gophish_campaign(args):
 
         if args.targets_csv:
             loading_animation("Parsing targets CSV", 0.5)
-            targets = parse_targets_csv(args.targets_csv)
+            try:
+                targets = parse_targets_csv(args.targets_csv)
+            except (ValueError, FileNotFoundError, PermissionError) as csv_err:
+                print(_c(f"  CSV error: {csv_err}", Colors.RED))
+                print(_c("    Expected columns: email, first_name, last_name, position", Colors.DIM))
+                return
             client.create_group(args.group_name, targets)
             print(_c(f"  Created group '{args.group_name}' with {len(targets)} targets", Colors.GREEN))
 
@@ -271,7 +297,7 @@ def _gophish_campaign(args):
         loading_animation("Creating campaign", 1.0)
         result = client.create_campaign(**campaign_config)
     except (ValueError, GoPhishAPIError) as e:
-        print(_c(f"  Error: {e}", Colors.RED))
+        _gophish_error(e)
         return
 
     print(_c(f"\n  Campaign created (ID: {result.get('id', 'unknown')})", Colors.GREEN))
@@ -291,7 +317,7 @@ def _gophish_status(args):
         client = GoPhishClient(config["api_url"], config["api_key"], config["verify_ssl"])
         results = client.get_campaign_results(args.campaign_id)
     except (ValueError, GoPhishAPIError) as e:
-        print(_c(f"  Error: {e}", Colors.RED))
+        _gophish_error(e)
         return
 
     print(_c(f"\n  Campaign {args.campaign_id} Results:\n", Colors.BOLD + Colors.CYAN))
