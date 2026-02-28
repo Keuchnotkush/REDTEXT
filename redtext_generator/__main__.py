@@ -18,6 +18,7 @@ from .formatters import (
     format_full_scenario,
     export_json,
     export_markdown,
+    export_html,
     loading_animation,
     Colors,
     _c,
@@ -143,6 +144,10 @@ def cmd_generate(args):
     if args.export_md:
         path = export_markdown(data, args.export_md)
         print(_c(f"\n  ✓ Exported Markdown: {path}", Colors.YELLOW))
+
+    if args.export_html:
+        path = export_html(data, args.export_html)
+        print(_c(f"\n  ✓ Exported HTML: {path}", Colors.YELLOW))
 
 
 def cmd_gophish(args):
@@ -372,6 +377,8 @@ def main():
                        help="Export scenario as JSON")
         p.add_argument("--export-md", default=None, metavar="FILE",
                        help="Export scenario as Markdown")
+        p.add_argument("--export-html", default=None, metavar="FILE",
+                       help="Export scenario as HTML report")
 
     for name, desc in [("phishing", "Generate phishing email"), ("smishing", "Generate smishing (SMS) message"),
                        ("quishing", "Generate QR code phishing scenario"),

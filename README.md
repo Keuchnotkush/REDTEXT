@@ -91,6 +91,7 @@ python -m redtext_generator list
 | `--seed` | `-s` | Random seed (reproducible output) | none |
 | `--export-json` | | Export as JSON file | none |
 | `--export-md` | | Export as Markdown file | none |
+| `--export-html` | | Export as HTML report | none |
 | `--no-banner` | | Suppress ASCII banner | false |
 | `--no-disclaimer` | | Suppress disclaimer | false |
 
@@ -199,8 +200,11 @@ python -m redtext_generator phishing -i finance -u high --export-json scenario.j
 # Export as Markdown
 python -m redtext_generator full -i tech -u critical --export-md report.md
 
-# Both
-python -m redtext_generator full --export-json out.json --export-md out.md
+# Export as HTML report (self-contained, opens in any browser)
+python -m redtext_generator phishing -i finance -u high --export-html report.html
+
+# All formats at once
+python -m redtext_generator full --export-json out.json --export-md out.md --export-html out.html
 ```
 
 ## Project Structure
@@ -211,7 +215,7 @@ redtext-generator/
 │   ├── __main__.py          # CLI entry point (argparse)
 │   ├── templates.py         # Industries, personas, email/vishing/physical templates
 │   ├── generator.py         # Core engine — assembles scenarios from templates
-│   ├── formatters.py        # Terminal display (ANSI colors) + JSON/Markdown export
+│   ├── formatters.py        # Terminal display (ANSI colors) + JSON/Markdown/HTML export
 │   ├── qrencode.py          # Minimal QR code encoder (pure Python)
 │   ├── gophish.py           # GoPhish API client (urllib)
 │   ├── gophish_bridge.py    # REDTEXT → GoPhish data conversion
@@ -234,7 +238,7 @@ redtext-generator/
 - [x] SMS/Smishing templates
 - [x] QR code phishing scenarios
 - [ ] Interactive TUI mode
-- [ ] HTML email export
+- [x] HTML email export
 - [x] GoPhish integration
 - [ ] Localization (FR, ES, DE)
 - [ ] AI-powered scenario customization

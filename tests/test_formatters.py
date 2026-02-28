@@ -19,6 +19,7 @@ from redtext_generator.formatters import (
     format_full_scenario,
     export_json,
     export_markdown,
+    export_html,
     Colors,
 )
 
@@ -268,6 +269,170 @@ class TestExportMarkdown(unittest.TestCase):
             path = f.name
         try:
             result = export_markdown(self.data, path)
+            self.assertEqual(result, path)
+        finally:
+            os.unlink(path)
+
+
+class TestExportHtml(unittest.TestCase):
+    def setUp(self):
+        random.seed(42)
+        gen = RedtextGenerator()
+        self.data = gen.generate_phishing_email()
+
+    def test_writes_file(self):
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(self.data, path)
+            self.assertTrue(os.path.exists(path))
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertTrue(len(content) > 0)
+        finally:
+            os.unlink(path)
+
+    def test_contains_html_structure(self):
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(self.data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("<!DOCTYPE html>", content)
+            self.assertIn("<html", content)
+            self.assertIn("</html>", content)
+            self.assertIn("<style>", content)
+            self.assertIn("REDTEXT", content)
+        finally:
+            os.unlink(path)
+
+    def test_no_ansi_in_output(self):
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(self.data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertNotRegex(content, r"\033\[")
+        finally:
+            os.unlink(path)
+
+    def test_phishing_has_email_preview(self):
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(self.data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("email-preview", content)
+            self.assertIn(self.data["subject"], content)
+            self.assertIn("From:", content)
+            self.assertIn("To:", content)
+        finally:
+            os.unlink(path)
+
+    def test_html_escapes_special_chars(self):
+        self.data["subject"] = '<script>alert("xss")</script>'
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(self.data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertNotIn("<script>", content)
+            self.assertIn("&lt;script&gt;", content)
+        finally:
+            os.unlink(path)
+
+    def test_full_scenario_export(self):
+        random.seed(42)
+        gen = RedtextGenerator()
+        full_data = gen.generate_full_scenario()
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(full_data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("<!DOCTYPE html>", content)
+            self.assertIn(full_data["operation_name"], content)
+            self.assertIn("PHASE 1", content)
+            self.assertIn("PHASE 2", content)
+        finally:
+            os.unlink(path)
+
+    def test_smishing_export(self):
+        random.seed(42)
+        gen = RedtextGenerator()
+        data = gen.generate_smishing_message()
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("SMS/SMISHING", content)
+            self.assertIn("<!DOCTYPE html>", content)
+        finally:
+            os.unlink(path)
+
+    def test_quishing_export(self):
+        random.seed(42)
+        gen = RedtextGenerator()
+        data = gen.generate_quishing_scenario()
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("QUISHING", content)
+            self.assertIn("qr-block", content)
+        finally:
+            os.unlink(path)
+
+    def test_vishing_export(self):
+        random.seed(42)
+        gen = RedtextGenerator()
+        data = gen.generate_vishing_script()
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("VISHING", content)
+            self.assertIn("OPENING", content)
+        finally:
+            os.unlink(path)
+
+    def test_physical_export(self):
+        random.seed(42)
+        gen = RedtextGenerator()
+        data = gen.generate_physical_pretext()
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
+            path = f.name
+        try:
+            export_html(data, path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("PHYSICAL", content)
+            self.assertIn("PROPS", content)
+        finally:
+            os.unlink(path)
+
+    def test_creates_directories(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "sub", "dir", "out.html")
+            export_html(self.data, path)
+            self.assertTrue(os.path.exists(path))
+
+    def test_returns_filepath(self):
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as f:
+            path = f.name
+        try:
+            result = export_html(self.data, path)
             self.assertEqual(result, path)
         finally:
             os.unlink(path)
