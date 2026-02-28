@@ -6,9 +6,11 @@ import os
 import random
 import ssl
 import tempfile
+import time
 import unittest
+import urllib.error
 from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from redtext_generator.config import (
     get_config_path,
@@ -94,6 +96,16 @@ class TestGoPhishClientInit(unittest.TestCase):
         client = GoPhishClient("https://localhost", "key", verify_ssl=False)
         self.assertFalse(client._ssl_context.check_hostname)
         self.assertEqual(client._ssl_context.verify_mode, ssl.CERT_NONE)
+
+    def test_default_timeout_and_retries(self):
+        client = GoPhishClient("https://localhost", "key")
+        self.assertEqual(client.timeout, 30)
+        self.assertEqual(client.retries, 3)
+
+    def test_custom_timeout_and_retries(self):
+        client = GoPhishClient("https://localhost", "key", timeout=60, retries=5)
+        self.assertEqual(client.timeout, 60)
+        self.assertEqual(client.retries, 5)
 
 
 # ── GoPhishClient Requests ────────────────────────────────────
@@ -235,6 +247,246 @@ class TestGoPhishClientRequest(unittest.TestCase):
 
         result = self.client._request("DELETE", "/api/templates/1")
         self.assertEqual(result, {})
+
+
+# ── GoPhishClient Retry Behavior ─────────────────────────────
+
+class TestGoPhishClientRetry(unittest.TestCase):
+    def setUp(self):
+        self.client = GoPhishClient(
+            "https://gophish.local", "testkey123", retries=3,
+        )
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_retries_on_502(self, mock_urlopen, mock_sleep):
+        """502 is retryable — should retry and succeed on second attempt."""
+        http_err = urllib.error.HTTPError(
+            "https://gophish.local/api/templates/", 502,
+            "Bad Gateway", {}, StringIO(""),
+        )
+        mock_urlopen.side_effect = [http_err, _mock_response([{"id": 1}])]
+        result = self.client.get_templates()
+        self.assertEqual(result, [{"id": 1}])
+        self.assertEqual(mock_urlopen.call_count, 2)
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_retries_on_503(self, mock_urlopen, mock_sleep):
+        http_err = urllib.error.HTTPError(
+            "https://gophish.local/api/templates/", 503,
+            "Service Unavailable", {}, StringIO(""),
+        )
+        mock_urlopen.side_effect = [http_err, _mock_response([])]
+        result = self.client.get_templates()
+        self.assertEqual(result, [])
+        self.assertEqual(mock_urlopen.call_count, 2)
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_retries_on_429(self, mock_urlopen, mock_sleep):
+        http_err = urllib.error.HTTPError(
+            "https://gophish.local/api/templates/", 429,
+            "Too Many Requests", {}, StringIO(""),
+        )
+        mock_urlopen.side_effect = [http_err, http_err, _mock_response([])]
+        result = self.client.get_templates()
+        self.assertEqual(result, [])
+        self.assertEqual(mock_urlopen.call_count, 3)
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_no_retry_on_401(self, mock_urlopen, mock_sleep):
+        """401 is NOT retryable — should fail immediately."""
+        http_err = urllib.error.HTTPError(
+            "https://gophish.local/api/templates/", 401,
+            "Unauthorized", {}, StringIO('{"message":"invalid key"}'),
+        )
+        mock_urlopen.side_effect = http_err
+        with self.assertRaises(GoPhishAPIError) as ctx:
+            self.client.get_templates()
+        self.assertEqual(ctx.exception.status_code, 401)
+        self.assertEqual(mock_urlopen.call_count, 1)
+        mock_sleep.assert_not_called()
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_no_retry_on_404(self, mock_urlopen, mock_sleep):
+        http_err = urllib.error.HTTPError(
+            "https://gophish.local/api/templates/", 404,
+            "Not Found", {}, StringIO(""),
+        )
+        mock_urlopen.side_effect = http_err
+        with self.assertRaises(GoPhishAPIError):
+            self.client.get_templates()
+        self.assertEqual(mock_urlopen.call_count, 1)
+        mock_sleep.assert_not_called()
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_retries_on_connection_error(self, mock_urlopen, mock_sleep):
+        url_err = urllib.error.URLError("Connection refused")
+        mock_urlopen.side_effect = [url_err, _mock_response({"ok": True})]
+        result = self.client._request("GET", "/api/templates/")
+        self.assertEqual(result, {"ok": True})
+        self.assertEqual(mock_urlopen.call_count, 2)
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_exhausted_retries_raises(self, mock_urlopen, mock_sleep):
+        """After all retries exhausted, raises the last error."""
+        url_err = urllib.error.URLError("Connection refused")
+        mock_urlopen.side_effect = url_err
+        with self.assertRaises(GoPhishAPIError) as ctx:
+            self.client.get_templates()
+        self.assertIn("Connection error", str(ctx.exception))
+        self.assertEqual(mock_urlopen.call_count, 3)
+
+    @patch("time.sleep")
+    @patch("urllib.request.urlopen")
+    def test_exponential_backoff_timing(self, mock_urlopen, mock_sleep):
+        url_err = urllib.error.URLError("Connection refused")
+        mock_urlopen.side_effect = url_err
+        with self.assertRaises(GoPhishAPIError):
+            self.client.get_templates()
+        # Backoff: sleep(1) after attempt 0, sleep(2) after attempt 1
+        self.assertEqual(mock_sleep.call_count, 2)
+        mock_sleep.assert_any_call(1)
+        mock_sleep.assert_any_call(2)
+
+    @patch("urllib.request.urlopen")
+    def test_timeout_passed_to_urlopen(self, mock_urlopen):
+        client = GoPhishClient("https://gophish.local", "key", timeout=15)
+        mock_urlopen.return_value = _mock_response([])
+        client.get_templates()
+        _, kwargs = mock_urlopen.call_args
+        self.assertEqual(kwargs.get("timeout"), 15)
+
+    @patch("urllib.request.urlopen")
+    def test_no_retry_on_json_decode_error(self, mock_urlopen):
+        """JSON decode errors are not retryable."""
+        mock = MagicMock()
+        mock.read.return_value = b"not json"
+        mock.__enter__ = lambda s: s
+        mock.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock
+        with self.assertRaises(GoPhishAPIError):
+            self.client.get_templates()
+        self.assertEqual(mock_urlopen.call_count, 1)
+
+
+# ── CSV Validation ───────────────────────────────────────────
+
+class TestCsvValidation(unittest.TestCase):
+    def _write_csv(self, rows, tmpdir):
+        path = os.path.join(tmpdir, "targets.csv")
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            for row in rows:
+                writer.writerow(row)
+        return path
+
+    def test_invalid_email_format_raises(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = self._write_csv([
+                ["email", "first_name", "last_name", "position"],
+                ["not-an-email", "Alice", "Smith", "Engineer"],
+            ], tmpdir)
+            with self.assertRaises(ValueError) as ctx:
+                parse_targets_csv(path)
+            self.assertIn("invalid email", str(ctx.exception))
+            self.assertIn("Row 2", str(ctx.exception))
+
+    def test_email_without_domain_raises(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = self._write_csv([
+                ["email", "first_name", "last_name", "position"],
+                ["user@", "Bob", "Jones", "Manager"],
+            ], tmpdir)
+            with self.assertRaises(ValueError) as ctx:
+                parse_targets_csv(path)
+            self.assertIn("invalid email", str(ctx.exception))
+
+    def test_formula_injection_equals_raises(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = self._write_csv([
+                ["email", "first_name", "last_name", "position"],
+                ["a@b.com", "=cmd|'/C calc'!A0", "Smith", "Engineer"],
+            ], tmpdir)
+            with self.assertRaises(ValueError) as ctx:
+                parse_targets_csv(path)
+            self.assertIn("formula injection", str(ctx.exception))
+
+    def test_formula_injection_plus_raises(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = self._write_csv([
+                ["email", "first_name", "last_name", "position"],
+                ["a@b.com", "Alice", "+cmd", "Engineer"],
+            ], tmpdir)
+            with self.assertRaises(ValueError) as ctx:
+                parse_targets_csv(path)
+            self.assertIn("formula injection", str(ctx.exception))
+
+    def test_formula_injection_at_sign_raises(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = self._write_csv([
+                ["email", "first_name", "last_name", "position"],
+                ["a@b.com", "Alice", "Smith", "@SUM(1+1)*cmd"],
+            ], tmpdir)
+            with self.assertRaises(ValueError) as ctx:
+                parse_targets_csv(path)
+            self.assertIn("formula injection", str(ctx.exception))
+
+    def test_valid_csv_passes_validation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = self._write_csv([
+                ["email", "first_name", "last_name", "position"],
+                ["alice@corp.com", "Alice", "Smith", "Engineer"],
+                ["bob@corp.com", "Bob", "Jones", "Manager"],
+            ], tmpdir)
+            targets = parse_targets_csv(path)
+            self.assertEqual(len(targets), 2)
+
+    def test_row_number_in_error_message(self):
+        """Error message includes the correct 1-based row number."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = self._write_csv([
+                ["email", "first_name", "last_name", "position"],
+                ["alice@corp.com", "Alice", "Smith", "Engineer"],
+                ["bad-email", "Bob", "Jones", "Manager"],
+            ], tmpdir)
+            with self.assertRaises(ValueError) as ctx:
+                parse_targets_csv(path)
+            self.assertIn("Row 3", str(ctx.exception))
+
+
+# ── Config Permissions ───────────────────────────────────────
+
+class TestConfigPermissions(unittest.TestCase):
+    @patch("os.chmod")
+    def test_save_sets_file_permissions(self, mock_chmod):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_path = os.path.join(tmpdir, "config.ini")
+            with patch("redtext_generator.config.get_config_path", return_value=fake_path):
+                save_gophish_config("https://test:3333", "mykey")
+            # Should chmod the directory (0o700) and the file (0o600)
+            chmod_calls = mock_chmod.call_args_list
+            modes = [c[0][1] for c in chmod_calls]
+            self.assertIn(0o700, modes)
+            self.assertIn(0o600, modes)
+
+    def test_save_works_without_chmod_support(self):
+        """Config save works even if chmod raises (Windows)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_path = os.path.join(tmpdir, "config.ini")
+            with patch("redtext_generator.config.get_config_path", return_value=fake_path):
+                with patch("os.chmod", side_effect=OSError("not supported")):
+                    path = save_gophish_config("https://test:3333", "mykey")
+            self.assertTrue(os.path.isfile(path))
+            # Verify the config is still readable
+            with patch("redtext_generator.config.get_config_path", return_value=fake_path):
+                result = load_gophish_config()
+            self.assertEqual(result["api_url"], "https://test:3333")
 
 
 # ── text_to_html ──────────────────────────────────────────────
