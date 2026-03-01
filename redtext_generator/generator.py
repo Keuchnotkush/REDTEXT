@@ -25,7 +25,9 @@ from .templates import (
     PHYSICAL_PRETEXTS,
     PSYCH_PRINCIPLES,
     FAKE_DOCUMENTS,
+    get_localized_templates,
 )
+from .locales import load_locale
 from . import qrencode
 
 
@@ -38,18 +40,23 @@ def _random_id(length: int = 6) -> str:
     return "".join(random.choices(string.digits, k=length))
 
 
-def _random_name() -> str:
-    """Generate a random full name."""
-    first = random.choice([
-        "James", "Sarah", "Michael", "Emily", "David", "Jennifer",
-        "Robert", "Lisa", "Daniel", "Amanda", "Chris", "Rachel",
-        "Mark", "Karen", "Tom", "Nicole", "Brian", "Michelle",
-    ])
-    last = random.choice([
-        "Thompson", "Mitchell", "Anderson", "Roberts", "Campbell",
-        "Martinez", "Williams", "Johnson", "Brown", "Davis",
-        "Wilson", "Taylor", "Clark", "Lewis", "Walker",
-    ])
+def _random_name(strings=None) -> str:
+    """Generate a random full name, optionally locale-aware."""
+    if strings and "generator" in strings:
+        gen = strings["generator"]
+        first = random.choice(gen.get("first_names", ["James", "Sarah", "Michael"]))
+        last = random.choice(gen.get("last_names", ["Thompson", "Mitchell", "Anderson"]))
+    else:
+        first = random.choice([
+            "James", "Sarah", "Michael", "Emily", "David", "Jennifer",
+            "Robert", "Lisa", "Daniel", "Amanda", "Chris", "Rachel",
+            "Mark", "Karen", "Tom", "Nicole", "Brian", "Michelle",
+        ])
+        last = random.choice([
+            "Thompson", "Mitchell", "Anderson", "Roberts", "Campbell",
+            "Martinez", "Williams", "Johnson", "Brown", "Davis",
+            "Wilson", "Taylor", "Clark", "Lewis", "Walker",
+        ])
     return f"{first} {last}"
 
 
@@ -65,18 +72,25 @@ def _get_quarter() -> str:
     return "q4"
 
 
-def _random_date_near() -> str:
-    """Generate a random date 1-14 days from now."""
+def _random_date_near(strings=None) -> str:
+    """Generate a random date 1-14 days from now, optionally locale-aware."""
     offset = random.randint(1, 14)
     date = datetime.datetime.now() + datetime.timedelta(days=offset)
+    if strings and "generator" in strings:
+        months = strings["generator"].get("months")
+        if months:
+            return f"{date.day} {months[date.month - 1]} {date.year}"
     return date.strftime("%B %d, %Y")
 
 
-def _build_signature(persona_title: str, company: str = "ACME Corp") -> str:
-    """Build a realistic email signature."""
-    name = _random_name()
+def _build_signature(persona_title: str, company: str = "ACME Corp", strings=None) -> str:
+    """Build a realistic email signature, optionally locale-aware."""
+    name = _random_name(strings)
     phone = f"+1 ({random.randint(200,999)}) {random.randint(100,999)}-{random.randint(1000,9999)}"
-    return f"""Best regards,
+    closing = "Best regards,"
+    if strings and "generator" in strings:
+        closing = strings["generator"].get("signature_closing", closing)
+    return f"""{closing}
 {name}
 {persona_title}
 {company}
@@ -96,18 +110,35 @@ class RedtextGenerator:
         urgency: str = "medium",
         persona: str = "it_support",
         company_name: str = "Target Corp",
+        language: str = "en",
     ):
-        if industry not in INDUSTRIES:
-            raise ValueError(f"Unknown industry: {industry}. Choose from: {list(INDUSTRIES.keys())}")
-        if persona not in PERSONAS:
-            raise ValueError(f"Unknown persona: {persona}. Choose from: {list(PERSONAS.keys())}")
-        if urgency not in URGENCY_TRIGGERS:
-            raise ValueError(f"Unknown urgency: {urgency}. Choose from: {list(URGENCY_TRIGGERS.keys())}")
+        # Load localized templates
+        loc = get_localized_templates(language)
+        self._industries = loc["INDUSTRIES"]
+        self._personas = loc["PERSONAS"]
+        self._urgency_triggers = loc["URGENCY_TRIGGERS"]
+        self._seasonal_hooks = loc["SEASONAL_HOOKS"]
+        self._phishing_templates = loc["PHISHING_TEMPLATES"]
+        self._smishing_templates = loc["SMISHING_TEMPLATES"]
+        self._quishing_templates = loc["QUISHING_TEMPLATES"]
+        self._vishing_scripts = loc["VISHING_SCRIPTS"]
+        self._physical_pretexts = loc["PHYSICAL_PRETEXTS"]
+        self._psych_principles = loc["PSYCH_PRINCIPLES"]
+        self._fake_documents = loc["FAKE_DOCUMENTS"]
+        self._strings = load_locale(language)
+        self.language = language
+
+        if industry not in self._industries:
+            raise ValueError(f"Unknown industry: {industry}. Choose from: {list(self._industries.keys())}")
+        if persona not in self._personas:
+            raise ValueError(f"Unknown persona: {persona}. Choose from: {list(self._personas.keys())}")
+        if urgency not in self._urgency_triggers:
+            raise ValueError(f"Unknown urgency: {urgency}. Choose from: {list(self._urgency_triggers.keys())}")
 
         # Store selections
-        self.industry = INDUSTRIES[industry]
+        self.industry = self._industries[industry]
         self.industry_key = industry
-        self.persona = PERSONAS[persona]
+        self.persona = self._personas[persona]
         self.persona_key = persona
         self.urgency = urgency
         self.company_name = company_name
@@ -128,19 +159,21 @@ class RedtextGenerator:
 
     def generate_phishing_email(self, template_id: Optional[str] = None) -> dict:
         """Generate a phishing email scenario."""
+        strings = self._strings
         if template_id:
-            template = next((t for t in PHISHING_TEMPLATES if t["id"] == template_id), None)
+            template = next((t for t in self._phishing_templates if t["id"] == template_id), None)
             if not template:
-                template = random.choice(PHISHING_TEMPLATES)
+                template = random.choice(self._phishing_templates)
         else:
-            template = random.choice(PHISHING_TEMPLATES)
+            template = random.choice(self._phishing_templates)
 
         software = random.choice(self.industry["software"])
         department = random.choice(self.industry["departments"])
-        target_name = _random_name()
+        target_name = _random_name(strings)
         first_name = target_name.split()[0]
-        urgency_trigger = random.choice(URGENCY_TRIGGERS[self.urgency])
+        urgency_trigger = random.choice(self._urgency_triggers[self.urgency])
         persona_title = random.choice(self.persona["titles"])
+        gen = strings.get("generator", {})
 
         replacements = {
             "{first_name}": first_name,
@@ -148,22 +181,23 @@ class RedtextGenerator:
             "{department}": department,
             "{company}": self.company_name,
             "{urgency_opening}": urgency_trigger,
-            "{deadline}": random.choice(["24 hours", "end of business today", "4:00 PM today", "Friday"]),
-            "{signature}": _build_signature(persona_title, self.company_name),
+            "{deadline}": random.choice(gen.get("deadlines", ["24 hours", "end of business today", "4:00 PM today", "Friday"])),
+            "{signature}": _build_signature(persona_title, self.company_name, strings),
             "{phishing_link}": f"https://{self.company_name.lower().replace(' ', '')}-verify.com/auth/{_random_id(12)}",
-            "{document_name}": random.choice(FAKE_DOCUMENTS),
-            "{document_type}": random.choice(["document", "spreadsheet", "report", "invoice"]),
-            "{attachment_note}": f"Attachment: {random.choice(FAKE_DOCUMENTS)}",
-            "{executive_name}": _random_name(),
-            "{executive_signature}": _build_signature(random.choice(PERSONAS["executive"]["titles"]), self.company_name),"{amount}": f"{random.randint(1000, 10000):,}",
+            "{document_name}": random.choice(self._fake_documents),
+            "{document_type}": random.choice(gen.get("document_types", ["document", "spreadsheet", "report", "invoice"])),
+            "{attachment_note}": f"{gen.get('attachment_prefix', 'Attachment')}: {random.choice(self._fake_documents)}",
+            "{executive_name}": _random_name(strings),
+            "{executive_signature}": _build_signature(random.choice(self._personas["executive"]["titles"]), self.company_name, strings),
+            "{amount}": f"{random.randint(1000, 10000):,}",
             "{bank_name}": random.choice(["Chase Bank", "Wells Fargo", "Bank of America"]),
             "{account_placeholder}": f"XXXX-XXXX-{random.randint(1000, 9999)}",
             "{reference}": f"PO-{_random_id(6)}",
             "{callback_number}": f"1-800-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
             "{transaction_id}": f"TXN-{_random_id(10)}",
-            "{date}": _random_date_near(),
+            "{date}": _random_date_near(strings),
             "{invoice_number}": _random_id(8),
-            "{generic_signature}": f"Billing Department, {self.company_name}",
+            "{generic_signature}": gen.get("billing_department", "Billing Department, {company}").replace("{company}", self.company_name),
         }
 
         subject = random.choice(template["subject_lines"])
@@ -184,6 +218,7 @@ class RedtextGenerator:
             },
             "attacker_persona": persona_title,
             "urgency_level": self.urgency,
+            "language": self.language,
         }
     
     # ───────────────────────────────────────────────────────
@@ -202,15 +237,17 @@ class RedtextGenerator:
 
     def generate_vishing_script(self, script_id: Optional[str] = None) -> dict:
         """Generate a vishing call script."""
+        strings = self._strings
+        gen = strings.get("generator", {})
         if script_id:
-            script = next((s for s in VISHING_SCRIPTS if s["id"] == script_id), None)
+            script = next((s for s in self._vishing_scripts if s["id"] == script_id), None)
             if not script:
-                script = random.choice(VISHING_SCRIPTS)
+                script = random.choice(self._vishing_scripts)
         else:
-                script = random.choice(VISHING_SCRIPTS)
-        caller = _random_name()
-        target_name = _random_name()
-        manager_name = _random_name()
+            script = random.choice(self._vishing_scripts)
+        caller = _random_name(strings)
+        target_name = _random_name(strings)
+        manager_name = _random_name(strings)
         department = random.choice(self.industry["departments"])
         software = random.choice(self.industry["software"])
         replacements = {
@@ -220,18 +257,18 @@ class RedtextGenerator:
             "{department}": department,
             "{manager_name}": manager_name,
             "{software}": software,
-            "{issue}": random.choice(["unusual login activity", "a failed security scan", "unpatched software vulnerabilities", "anomalous network traffic"]),
+            "{issue}": random.choice(gen.get("vishing_issues", ["unusual login activity", "a failed security scan", "unpatched software vulnerabilities", "anomalous network traffic"])),
             "{ticket_number}": f"TCKT-{_random_id(8)}",
             "{time}": f"{random.randint(1, 12)}:{random.choice(['00', '15', '30', '45'])} {random.choice(['AM', 'PM'])}",
-            "{time_of_day}": random.choice(["morning", "afternoon", "evening"]),
+            "{time_of_day}": random.choice(gen.get("time_of_day", ["morning", "afternoon", "evening"])),
             "{vendor_name}": random.choice(["Microsoft", "Adobe", "Oracle"]),
             "{cve_year}": random.choice(["2023", "2025"]),
             "{cve_id}": _random_id(5),
-            "{disclosure_date}": _random_date_near(),
-            "{executive_name}": _random_name(),
-            "{action}": random.choice(["wire transfer", "data transfer", "password reset"]),
-            "{deadline}": random.choice(["end of day", "tomorrow", "by noon"]),
-            "{department_head}": _random_name()
+            "{disclosure_date}": _random_date_near(strings),
+            "{executive_name}": _random_name(strings),
+            "{action}": random.choice(gen.get("vishing_actions", ["wire transfer", "data transfer", "password reset"])),
+            "{deadline}": random.choice(gen.get("deadlines_vishing", ["end of day", "tomorrow", "by noon"])),
+            "{department_head}": _random_name(strings),
         }
 
         formatted = {}
@@ -240,6 +277,15 @@ class RedtextGenerator:
             for placeholder, value in replacements.items():
                 text = text.replace(placeholder, value)
             formatted[key] = text
+
+        prep_notes = gen.get("preparation_notes_vishing", [
+            "OSINT the target's LinkedIn for role confirmation",
+            "Verify {software} is actually used (check job postings, Shodan)",
+            "Spoof caller ID to match {company}'s known numbers",
+            "Prepare a fake ticket number in case they want to verify",
+        ])
+        prep_notes = [n.replace("{software}", software).replace("{company}", self.company_name) for n in prep_notes]
+
         return {
             "type": "vishing_script",
             "template": script["name"],
@@ -253,14 +299,9 @@ class RedtextGenerator:
             "script": formatted,
             "urgency_level": self.urgency,
             "recommended_principles": ["authority", "urgency", "liking"],
-            "preparation_notes": [
-                f"OSINT the target's LinkedIn for role confirmation",
-                f"Verify {software} is actually used (check job postings, Shodan)",
-                f"Spoof caller ID to match {self.company_name}'s known numbers",
-                f"Prepare a fake ticket number in case they want to verify"
-            ],        
-            
-            }
+            "preparation_notes": prep_notes,
+            "language": self.language,
+        }
     # ───────────────────────────────────────────────────────
     #  METHOD 3: generate_physical_pretext
     # ───────────────────────────────────────────────────────
@@ -275,16 +316,17 @@ class RedtextGenerator:
 
     def generate_physical_pretext(self, pretext_id: Optional[str] = None) -> dict:
         """Generate a physical access pretext scenario."""
+        strings = self._strings
+        gen = strings.get("generator", {})
         if pretext_id:
-            pretext = next((p for p in PHYSICAL_PRETEXTS if p["id"] == pretext_id), None)
+            pretext = next((p for p in self._physical_pretexts if p["id"] == pretext_id), None)
             if not pretext:
-                pretext = random.choice(PHYSICAL_PRETEXTS)
+                pretext = random.choice(self._physical_pretexts)
         else:
-            pretext = random.choice(PHYSICAL_PRETEXTS)
-        operator_name = _random_name()
-        target_name = _random_name()
+            pretext = random.choice(self._physical_pretexts)
+        operator_name = _random_name(strings)
+        target_name = _random_name(strings)
         department = random.choice(self.industry["departments"])
-        floor = random.randint(1, 20)
         replacements = {
             "{floor}": str(random.randint(1, 12)),
             "{name}": operator_name,
@@ -293,33 +335,37 @@ class RedtextGenerator:
             "{wo_number}": f"WO-{_random_id(6)}",
             "{isp_name}": random.choice(["Comcast", "AT&T", "Verizon"]),
             "{fire_safety_company}": random.choice(["SafeFire Inc.", "FireGuard Solutions", "FlameSafe Services"]),
-            "{area}": random.choice(["the server room HVAC", "3rd floor ventilation", "the east wing electrical panel"])
+            "{area}": random.choice(["the server room HVAC", "3rd floor ventilation", "the east wing electrical panel"]),
         }
 
         script_text = pretext["script"]
         for key, val in replacements.items():
-                script_text = script_text.replace(key, val)
+            script_text = script_text.replace(key, val)
+
+        prep_notes = gen.get("preparation_notes_physical", [
+            "Acquire appropriate uniform and props for the cover identity",
+            "Print work orders with {company} address and building management logo",
+            "Research building layout via Google Maps and public records",
+            "Identify security checkpoints, badge readers, and camera positions",
+            "Know the name of building management or facilities contact in case questioned",
+        ])
+        prep_notes = [n.replace("{company}", self.company_name) for n in prep_notes]
 
         return {
             "type": "physical_pretext",
             "template": pretext["name"],
             "operator": {
                 "name": operator_name,
-                "cover_identity": pretext["name"],       
-                "appearance": pretext["appearance"],       
-                "props": pretext["props"],                 
+                "cover_identity": pretext["name"],
+                "appearance": pretext["appearance"],
+                "props": pretext["props"],
             },
             "script": script_text,
-            "target_areas": pretext["target_areas"],       
+            "target_areas": pretext["target_areas"],
             "objectives": pretext["objectives"],
             "urgency_level": self.urgency,
-            "preparation_notes": [
-                "Acquire appropriate uniform and props for the cover identity",
-                f"Print work orders with {self.company_name} address and building management logo",
-                "Research building layout via Google Maps and public records",
-                "Identify security checkpoints, badge readers, and camera positions",
-                "Know the name of building management or facilities contact in case questioned"
-            ],
+            "preparation_notes": prep_notes,
+            "language": self.language,
         }
 
     # ───────────────────────────────────────────────────────
@@ -337,16 +383,17 @@ class RedtextGenerator:
 
     def generate_smishing_message(self, template_id: Optional[str] = None) -> dict:
         """Generate a smishing (SMS phishing) scenario."""
+        strings = self._strings
         if template_id:
-            template = next((t for t in SMISHING_TEMPLATES if t["id"] == template_id), None)
+            template = next((t for t in self._smishing_templates if t["id"] == template_id), None)
             if not template:
-                template = random.choice(SMISHING_TEMPLATES)
+                template = random.choice(self._smishing_templates)
         else:
-            template = random.choice(SMISHING_TEMPLATES)
+            template = random.choice(self._smishing_templates)
 
         software = random.choice(self.industry["software"])
         department = random.choice(self.industry["departments"])
-        target_name = _random_name()
+        target_name = _random_name(strings)
         first_name = target_name.split()[0]
         persona_title = random.choice(self.persona["titles"])
 
@@ -385,6 +432,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "short_code": short_code,
             "malicious_link": smishing_link,
+            "language": self.language,
         }
 
     # ───────────────────────────────────────────────────────
@@ -401,16 +449,18 @@ class RedtextGenerator:
 
     def generate_quishing_scenario(self, template_id: Optional[str] = None) -> dict:
         """Generate a quishing (QR code phishing) scenario."""
+        strings = self._strings
+        gen = strings.get("generator", {})
         if template_id:
-            template = next((t for t in QUISHING_TEMPLATES if t["id"] == template_id), None)
+            template = next((t for t in self._quishing_templates if t["id"] == template_id), None)
             if not template:
-                template = random.choice(QUISHING_TEMPLATES)
+                template = random.choice(self._quishing_templates)
         else:
-            template = random.choice(QUISHING_TEMPLATES)
+            template = random.choice(self._quishing_templates)
 
         software = random.choice(self.industry["software"])
         department = random.choice(self.industry["departments"])
-        target_name = _random_name()
+        target_name = _random_name(strings)
         persona_title = random.choice(self.persona["titles"])
 
         domain = random.choice(["secure-portal.co", "wifi-connect.net", "pay-verify.com", "doc-access.org", "id-check.info"])
@@ -423,10 +473,10 @@ class RedtextGenerator:
             "{support_email}": f"it-support@{self.company_name.lower().replace(' ', '')}.com",
             "{parking_zone}": random.choice(["A", "B", "C", "D"]),
             "{parking_rate}": str(random.randint(2, 8)),
-            "{document_name}": random.choice(FAKE_DOCUMENTS),
-            "{sender_name}": _random_name(),
+            "{document_name}": random.choice(self._fake_documents),
+            "{sender_name}": _random_name(strings),
             "{sender_title}": random.choice(self.persona["titles"]),
-            "{deadline}": random.choice(["24 hours", "end of business today", "Friday at 5:00 PM", _random_date_near()]),
+            "{deadline}": random.choice(gen.get("deadlines_quishing", ["24 hours", "end of business today", "Friday at 5:00 PM"]) + [_random_date_near(strings)]),
         }
 
         pretext = template["pretext_text"]
@@ -453,6 +503,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "malicious_link": malicious_link,
             "qr_ascii": qr_ascii,
+            "language": self.language,
         }
 
     # ───────────────────────────────────────────────────────
@@ -468,12 +519,31 @@ class RedtextGenerator:
 
     def generate_full_scenario(self) -> dict:
         """Generate a complete multi-vector attack scenario."""
+        strings = self._strings
+        gen = strings.get("generator", {})
         operation_name = f"Operation {random.choice(['SHADOW', 'IRON', 'SILVER', 'GOLDEN', 'CRIMSON'])} {random.choice(['GATE', 'SPEAR', 'WAVE', 'FANG', 'BLADE'])}"
         quarter = _get_quarter()
-        seasonal_hook = random.choice(SEASONAL_HOOKS[quarter])
+        seasonal_hook = random.choice(self._seasonal_hooks[quarter])
         phishing_scenario = self.generate_phishing_email()
         social_scenario = self.generate_vishing_script()
         physical_scenario = self.generate_physical_pretext()
+
+        recon_tasks = gen.get("recon_tasks", [
+            "Research {company} employees and organizational structure",
+            "Identify key personnel in {departments} departments",
+            "Map internal network topology and critical systems",
+            "Identify public-facing services and potential attack vectors",
+        ])
+        depts = str(self.industry["departments"])
+        recon_tasks = [t.replace("{company}", self.company_name).replace("{departments}", depts) for t in recon_tasks]
+
+        opsec_notes = gen.get("opsec_notes", [
+            "Use VPN and burner infrastructure for all communications",
+            "Register lookalike domains at least 30 days prior",
+            "Warm up email domain with legitimate traffic before phishing",
+            "Use separate devices for each engagement phase",
+            "Document everything for the final report",
+        ])
 
         return {
             "operation_name": operation_name,
@@ -484,17 +554,7 @@ class RedtextGenerator:
             "phishing": phishing_scenario,
             "social": social_scenario,
             "physical": physical_scenario,
-            "recon_tasks": [
-                f"Research {self.company_name} employees and organizational structure",
-                f"Identify key personnel in {self.industry['departments']} departments",
-                f"Map internal network topology and critical systems",
-                f"Identify public-facing services and potential attack vectors"
-            ],
-            "opsec_notes": [
-                "Use VPN and burner infrastructure for all communications",
-                "Register lookalike domains at least 30 days prior",
-                "Warm up email domain with legitimate traffic before phishing",
-                "Use separate devices for each engagement phase",
-                "Document everything for the final report"
-            ],
+            "recon_tasks": recon_tasks,
+            "opsec_notes": opsec_notes,
+            "language": self.language,
         }

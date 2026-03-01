@@ -102,6 +102,7 @@ class TestInteractiveHeader(unittest.TestCase):
 
 class TestInteractiveFlowPhishing(unittest.TestCase):
     @patch("builtins.input", side_effect=[
+        "1",    # language: English
         "1",    # scenario: Phishing Email
         "1",    # industry: tech
         "1",    # urgency: low
@@ -120,6 +121,7 @@ class TestInteractiveFlowPhishing(unittest.TestCase):
 
 class TestInteractiveFlowSmishing(unittest.TestCase):
     @patch("builtins.input", side_effect=[
+        "1",    # language: English
         "2",    # scenario: Smishing
         "1",    # industry
         "1",    # urgency
@@ -136,6 +138,7 @@ class TestInteractiveFlowSmishing(unittest.TestCase):
 
 class TestInteractiveFlowQuishing(unittest.TestCase):
     @patch("builtins.input", side_effect=[
+        "1",    # language: English
         "3",    # scenario: Quishing
         "1", "1", "1", "",
         "5",
@@ -149,6 +152,7 @@ class TestInteractiveFlowQuishing(unittest.TestCase):
 
 class TestInteractiveFlowVishing(unittest.TestCase):
     @patch("builtins.input", side_effect=[
+        "1",    # language: English
         "4",    # scenario: Vishing
         "1", "1", "1", "",
         "5",
@@ -162,6 +166,7 @@ class TestInteractiveFlowVishing(unittest.TestCase):
 
 class TestInteractiveFlowPhysical(unittest.TestCase):
     @patch("builtins.input", side_effect=[
+        "1",    # language: English
         "5",    # scenario: Physical
         "1", "1", "1", "",
         "5",
@@ -175,6 +180,7 @@ class TestInteractiveFlowPhysical(unittest.TestCase):
 
 class TestInteractiveFlowFull(unittest.TestCase):
     @patch("builtins.input", side_effect=[
+        "1",    # language: English
         "6",    # scenario: Full
         "1", "1", "1", "",
         "5",
@@ -202,6 +208,7 @@ class TestExportActions(unittest.TestCase):
     def test_export_json(self, mock_out, mock_input):
         path = os.path.join(self.tmpdir, "out.json")
         mock_input.side_effect = [
+            "1",                     # language: English
             "1", "1", "1", "1", "",  # scenario config
             "1", path,               # Export JSON + filename
             "5",                     # Quit
@@ -216,6 +223,7 @@ class TestExportActions(unittest.TestCase):
     def test_export_markdown(self, mock_out, mock_input):
         path = os.path.join(self.tmpdir, "out.md")
         mock_input.side_effect = [
+            "1",                     # language: English
             "1", "1", "1", "1", "",
             "2", path,
             "5",
@@ -230,6 +238,7 @@ class TestExportActions(unittest.TestCase):
     def test_export_html(self, mock_out, mock_input):
         path = os.path.join(self.tmpdir, "out.html")
         mock_input.side_effect = [
+            "1",                     # language: English
             "1", "1", "1", "1", "",
             "3", path,
             "5",
@@ -244,8 +253,10 @@ class TestExportActions(unittest.TestCase):
 
 class TestRegenerate(unittest.TestCase):
     @patch("builtins.input", side_effect=[
+        "1",                       # language: English
         "1", "1", "1", "1", "",   # first scenario
         "4",                       # Generate Another
+        "1",                       # language: English
         "1", "1", "1", "1", "",   # second scenario
         "5",                       # Quit
     ])

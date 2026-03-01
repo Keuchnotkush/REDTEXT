@@ -673,3 +673,113 @@ FAKE_DOCUMENTS = [
     "Layoff_Notices_Q1_2026.docx",
     "Personal_Performance_Review_2025.xlsx",
 ]
+
+
+def get_localized_templates(lang="en"):
+    """Return all template data structures for the given language.
+
+    For 'en', returns existing module-level constants unchanged.
+    For other languages, loads the locale and overlays translated fields
+    onto the English structure, preserving non-translatable fields.
+    """
+    if lang == "en":
+        return {
+            "INDUSTRIES": INDUSTRIES,
+            "PERSONAS": PERSONAS,
+            "URGENCY_TRIGGERS": URGENCY_TRIGGERS,
+            "SEASONAL_HOOKS": SEASONAL_HOOKS,
+            "PHISHING_TEMPLATES": PHISHING_TEMPLATES,
+            "SMISHING_TEMPLATES": SMISHING_TEMPLATES,
+            "QUISHING_TEMPLATES": QUISHING_TEMPLATES,
+            "VISHING_SCRIPTS": VISHING_SCRIPTS,
+            "PHYSICAL_PRETEXTS": PHYSICAL_PRETEXTS,
+            "PSYCH_PRINCIPLES": PSYCH_PRINCIPLES,
+            "FAKE_DOCUMENTS": FAKE_DOCUMENTS,
+        }
+
+    from .locales import load_locale
+    strings = load_locale(lang)
+
+    # Overlay translated industry fields, keep software from English
+    loc_industries = {}
+    for key, en_data in INDUSTRIES.items():
+        loc = strings.get("industries", {}).get(key, {})
+        loc_industries[key] = {
+            "name": loc.get("name", en_data["name"]),
+            "departments": loc.get("departments", en_data["departments"]),
+            "software": en_data["software"],
+            "jargon": loc.get("jargon", en_data["jargon"]),
+            "pain_points": loc.get("pain_points", en_data["pain_points"]),
+        }
+
+    # Overlay translated persona fields
+    loc_personas = {}
+    for key, en_data in PERSONAS.items():
+        loc = strings.get("personas", {}).get(key, {})
+        loc_personas[key] = {
+            "name": loc.get("name", en_data["name"]),
+            "titles": loc.get("titles", en_data["titles"]),
+            "pretexts": loc.get("pretexts", en_data["pretexts"]),
+        }
+
+    # Overlay list-based template arrays
+    def _overlay_list(en_list, loc_list, fields):
+        result = []
+        for i, en_item in enumerate(en_list):
+            loc_item = loc_list[i] if i < len(loc_list) else {}
+            merged = {"id": en_item["id"]}
+            for f in fields:
+                merged[f] = loc_item.get(f, en_item.get(f))
+            result.append(merged)
+        return result
+
+    loc_phishing = _overlay_list(
+        PHISHING_TEMPLATES,
+        strings.get("phishing_templates", []),
+        ["name", "subject_lines", "body"],
+    )
+    loc_smishing = _overlay_list(
+        SMISHING_TEMPLATES,
+        strings.get("smishing_templates", []),
+        ["name", "messages"],
+    )
+    loc_quishing = _overlay_list(
+        QUISHING_TEMPLATES,
+        strings.get("quishing_templates", []),
+        ["name", "pretext_text", "delivery_methods", "placement_suggestions", "objectives"],
+    )
+    loc_vishing = _overlay_list(
+        VISHING_SCRIPTS,
+        strings.get("vishing_scripts", []),
+        ["name", "opening", "escalation", "objective", "red_flags_to_avoid"],
+    )
+    loc_physical = _overlay_list(
+        PHYSICAL_PRETEXTS,
+        strings.get("physical_pretexts", []),
+        ["name", "appearance", "props", "script", "target_areas", "objectives"],
+    )
+
+    # Overlay psych principles
+    loc_psych = {}
+    for key, en_data in PSYCH_PRINCIPLES.items():
+        loc = strings.get("psych_principles", {}).get(key, {})
+        loc_psych[key] = {
+            "name": loc.get("name", en_data["name"]),
+            "description": loc.get("description", en_data["description"]),
+            "application": loc.get("application", en_data["application"]),
+            "example": loc.get("example", en_data["example"]),
+        }
+
+    return {
+        "INDUSTRIES": loc_industries,
+        "PERSONAS": loc_personas,
+        "URGENCY_TRIGGERS": strings.get("urgency_triggers", URGENCY_TRIGGERS),
+        "SEASONAL_HOOKS": strings.get("seasonal_hooks", SEASONAL_HOOKS),
+        "PHISHING_TEMPLATES": loc_phishing,
+        "SMISHING_TEMPLATES": loc_smishing,
+        "QUISHING_TEMPLATES": loc_quishing,
+        "VISHING_SCRIPTS": loc_vishing,
+        "PHYSICAL_PRETEXTS": loc_physical,
+        "PSYCH_PRINCIPLES": loc_psych,
+        "FAKE_DOCUMENTS": strings.get("fake_documents", FAKE_DOCUMENTS),
+    }

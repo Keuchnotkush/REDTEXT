@@ -24,6 +24,7 @@ from .formatters import (
     _c,
 )
 from .templates import INDUSTRIES, PERSONAS, URGENCY_TRIGGERS, PSYCH_PRINCIPLES
+from .locales import SUPPORTED_LANGUAGES
 
 
 SCENARIO_TYPES = [
@@ -116,8 +117,14 @@ def cmd_interactive(args):
 
     scenario_labels = [s[1] for s in SCENARIO_TYPES]
 
+    lang_keys = list(SUPPORTED_LANGUAGES)
+    lang_labels = ["English", "Français", "Español", "Deutsch"]
+
     while True:
         _interactive_header()
+
+        lang_idx = _menu_prompt("Select language", lang_labels)
+        language = lang_keys[lang_idx]
 
         idx = _menu_prompt("Select scenario type", scenario_labels)
         key, label, gen_method, fmt_func = SCENARIO_TYPES[idx]
@@ -132,6 +139,7 @@ def cmd_interactive(args):
             urgency=urgency_keys[urg_idx],
             persona=persona_keys[per_idx],
             company_name=company,
+            language=language,
         )
 
         loading_animation(f"Generating {label}", 1.5)
@@ -191,6 +199,7 @@ def cmd_generate(args):
         urgency=args.urgency,
         persona=args.persona,
         company_name=args.company,
+        language=args.language,
     )
 
     if args.seed is not None:
@@ -332,6 +341,7 @@ def _gophish_push(args):
     gen = RedtextGenerator(
         industry=args.industry, urgency=args.urgency,
         persona=args.persona, company_name=args.company,
+        language=getattr(args, "language", "en"),
     )
 
     if args.seed is not None:
@@ -466,6 +476,8 @@ def main():
                        help="Specific template ID to use")
         p.add_argument("-s", "--seed", type=int, default=None,
                        help="Random seed for reproducible output")
+        p.add_argument("-l", "--language", default="en", choices=list(SUPPORTED_LANGUAGES),
+                       help="Output language (default: en)")
         p.add_argument("--export-json", default=None, metavar="FILE",
                        help="Export scenario as JSON")
         p.add_argument("--export-md", default=None, metavar="FILE",

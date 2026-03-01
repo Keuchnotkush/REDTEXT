@@ -93,6 +93,7 @@ python -m redtext_generator list
 | `--company` | `-c` | Target company name | `Target Corp` |
 | `--template` | `-t` | Specific template ID | random |
 | `--seed` | `-s` | Random seed (reproducible output) | none |
+| `--language` | `-l` | Output language (`en`, `fr`, `es`, `de`) | `en` |
 | `--export-json` | | Export as JSON file | none |
 | `--export-md` | | Export as Markdown file | none |
 | `--export-html` | | Export as HTML report | none |
@@ -196,6 +197,30 @@ python -m redtext_generator gophish templates --no-verify-ssl
 
 Or set `verify_ssl = false` in your config file during `gophish setup`.
 
+## Localization
+
+Generate scenarios in French, Spanish, or German:
+
+```bash
+# French phishing email
+python -m redtext_generator phishing -l fr --industry finance --urgency high
+
+# Spanish vishing script
+python -m redtext_generator vishing -l es --persona vendor --company "Acme Corp"
+
+# German full attack scenario
+python -m redtext_generator full -l de --industry tech --urgency critical
+```
+
+| Code | Language | Flag |
+|------|----------|------|
+| `en` | English | `-l en` (default) |
+| `fr` | French | `-l fr` |
+| `es` | Spanish | `-l es` |
+| `de` | German | `-l de` |
+
+In interactive mode, language selection is the first prompt. All template text, names, months, and UI strings are translated. Software names, domain names, and template IDs remain in English.
+
 ## Export
 ```bash
 # Export as JSON
@@ -223,14 +248,21 @@ redtext-generator/
 │   ├── qrencode.py          # Minimal QR code encoder (pure Python)
 │   ├── gophish.py           # GoPhish API client (urllib)
 │   ├── gophish_bridge.py    # REDTEXT → GoPhish data conversion
-│   └── config.py            # Config management (INI + env vars + CLI)
+│   ├── config.py            # Config management (INI + env vars + CLI)
+│   └── locales/             # Localization strings
+│       ├── __init__.py      # Locale registry and loader
+│       ├── en.py            # English (default / reference)
+│       ├── fr.py            # French
+│       ├── es.py            # Spanish
+│       └── de.py            # German
 ├── tests/
 │   ├── test_generator.py
 │   ├── test_formatters.py
 │   ├── test_cli.py
 │   ├── test_templates.py
 │   ├── test_qrencode.py     # QR encoder tests
-│   └── test_gophish.py      # GoPhish integration tests
+│   ├── test_gophish.py      # GoPhish integration tests
+│   └── test_locales.py      # Localization tests
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── pyproject.toml
@@ -244,7 +276,7 @@ redtext-generator/
 - [x] Interactive TUI mode
 - [x] HTML email export
 - [x] GoPhish integration
-- [ ] Localization (FR, ES, DE)
+- [x] Localization (FR, ES, DE)
 - [ ] AI-powered scenario customization
 
 ## Legal
