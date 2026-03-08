@@ -25,6 +25,7 @@ from .formatters import (
 )
 from .templates import INDUSTRIES, PERSONAS, URGENCY_TRIGGERS, PSYCH_PRINCIPLES
 from .locales import SUPPORTED_LANGUAGES
+from .mitre import ATTACK_PHASES, get_phase_scenario_type
 
 
 SCENARIO_TYPES = [
@@ -38,31 +39,32 @@ SCENARIO_TYPES = [
 
 
 BANNER = f"""
-{Colors.RED}
-  ██████╗ ███████╗██████╗ ████████╗███████╗██╗  ██╗████████╗
-  ██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝
-  ██████╔╝█████╗  ██║  ██║   ██║   █████╗   ╚███╔╝    ██║
-  ██╔══██╗██╔══╝  ██║  ██║   ██║   ██╔══╝   ██╔██╗    ██║
-  ██║  ██║███████╗██████╔╝   ██║   ███████╗██╔╝ ██╗   ██║
-  ╚═╝  ╚═╝╚══════╝╚═════╝    ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝
-       {Colors.YELLOW} ██████╗ ███████╗███╗   ██╗
-       ██╔════╝ ██╔════╝████╗  ██║
-       ██║  ███╗█████╗  ██╔██╗ ██║
-       ██║   ██║██╔══╝  ██║╚██╗██║
-       ╚██████╔╝███████╗██║ ╚████║
-        ╚═════╝ ╚══════╝╚═╝  ╚═══╝{Colors.RESET}
+{Colors.RED}{Colors.BOLD}  ┌─────────────────────────────────────────────────────────────┐
+  │                                                             │
+  │   ██████  ███████ ██████  ████████ ███████ ██   ██ ████████ │
+  │   ██   ██ ██      ██   ██    ██    ██       ██ ██     ██    │
+  │   ██████  █████   ██   ██    ██    █████     ███      ██    │
+  │   ██   ██ ██      ██   ██    ██    ██       ██ ██     ██    │
+  │   ██   ██ ███████ ██████     ██    ███████ ██   ██    ██    │
+  │                                                             │{Colors.RESET}
+{Colors.YELLOW}  │              ██████  ███████ ███    ██                      │
+  │             ██       ██      ████   ██                      │
+  │             ██   ███ █████   ██ ██  ██                      │
+  │             ██    ██ ██      ██  ██ ██                      │
+  │              ██████  ███████ ██   ████                      │{Colors.RESET}
+{Colors.RED}{Colors.BOLD}  └─────────────────────────────────────────────────────────────┘{Colors.RESET}
 
-  {Colors.RED}╔══════════════════════════════════════════════════════════╗
-  ║{Colors.RESET} {Colors.BOLD}  ◢◤ SOCIAL ENGINEERING SCENARIO BUILDER ◢◤{Colors.RESET}             {Colors.RED}║
-  ║{Colors.RESET}                                                          {Colors.RED}║
-  ║{Colors.RESET}  {Colors.DIM}  ▸ Phishing Emails    ▸ Vishing Scripts{Colors.RESET}              {Colors.RED}║
-  ║{Colors.RESET}  {Colors.DIM}  ▸ SMS/Smishing        ▸ QR/Quishing{Colors.RESET}                   {Colors.RED}║
-  ║{Colors.RESET}  {Colors.DIM}  ▸ Physical Pretexts   ▸ Full Attack Scenarios{Colors.RESET}       {Colors.RED}║
-  ║{Colors.RESET}                                                          {Colors.RED}║
-  ║{Colors.RESET}  {Colors.YELLOW}  "Some data is too dangerous to record."{Colors.RESET}            {Colors.RED}║
-  ║{Colors.RESET}  {Colors.DIM}                          — SCP-2521{Colors.RESET}                  {Colors.RED}║
-  ╚══════════════════════════════════════════════════════════╝{Colors.RESET}
-  {Colors.DIM}v1.0.0 | @keuchnotkush | For authorized use only{Colors.RESET}
+  {Colors.RED}┌──────────────────────────────────────────────────────┐{Colors.RESET}
+  {Colors.RED}│{Colors.RESET} {Colors.DIM}>{Colors.RESET} {Colors.BOLD}SOCIAL ENGINEERING SCENARIO BUILDER{Colors.RESET}                 {Colors.RED}│{Colors.RESET}
+  {Colors.RED}│{Colors.RESET}                                                      {Colors.RED}│{Colors.RESET}
+  {Colors.RED}│{Colors.RESET}   {Colors.DIM}[01]{Colors.RESET} Phishing Emails    {Colors.DIM}[04]{Colors.RESET} Vishing Scripts      {Colors.RED}│{Colors.RESET}
+  {Colors.RED}│{Colors.RESET}   {Colors.DIM}[02]{Colors.RESET} SMS / Smishing     {Colors.DIM}[05]{Colors.RESET} Physical Pretexts    {Colors.RED}│{Colors.RESET}
+  {Colors.RED}│{Colors.RESET}   {Colors.DIM}[03]{Colors.RESET} QR / Quishing      {Colors.DIM}[06]{Colors.RESET} Full Attack Chain    {Colors.RED}│{Colors.RESET}
+  {Colors.RED}│{Colors.RESET}                                                      {Colors.RED}│{Colors.RESET}
+  {Colors.RED}│{Colors.RESET}   {Colors.YELLOW}"The best social engineer is the one you{Colors.RESET}       {Colors.RED}│{Colors.RESET}
+  {Colors.RED}│{Colors.RESET}   {Colors.YELLOW} never knew was there."{Colors.RESET}  {Colors.DIM}-- Kevin Mitnick{Colors.RESET}       {Colors.RED}│{Colors.RESET}
+  {Colors.RED}└──────────────────────────────────────────────────────┘{Colors.RESET}
+  {Colors.DIM}  v1.0.0 | @keuchnotkush | authorized use only{Colors.RESET}
 """
 
 DISCLAIMER = f"""
@@ -493,6 +495,16 @@ def main():
 
     subparsers.add_parser("interactive", help="Interactive scenario builder wizard")
 
+    # ── ATT&CK phase subcommand ───────────────────────────────
+    phase_parser = subparsers.add_parser(
+        "phase",
+        help="Generate scenario by MITRE ATT&CK phase",
+        epilog="Phases: " + ", ".join(ATTACK_PHASES.keys()),
+    )
+    phase_parser.add_argument("attack_phase", choices=list(ATTACK_PHASES.keys()),
+                              metavar="PHASE", help="ATT&CK phase name")
+    add_common_args(phase_parser)
+
     # ── GoPhish integration subcommands ────────────────────────
     gophish_parser = subparsers.add_parser("gophish", help="GoPhish integration commands")
     gophish_sub = gophish_parser.add_subparsers(dest="gophish_command")
@@ -545,6 +557,15 @@ def main():
             cmd_interactive(args)
         except KeyboardInterrupt:
             print(_c("\n\n  Session ended.\n", Colors.DIM))
+    elif args.command == "phase":
+        if not getattr(args, "no_disclaimer", False):
+            print(DISCLAIMER)
+        # Map ATT&CK phase to scenario type and generate
+        mapped_type = get_phase_scenario_type(args.attack_phase)
+        phase_label = ATTACK_PHASES[args.attack_phase]
+        print(_c(f"  ATT&CK Phase: {phase_label} → generating {mapped_type} scenario\n", Colors.MAGENTA))
+        args.command = mapped_type
+        cmd_generate(args)
     else:
         if not getattr(args, "no_disclaimer", False):
             print(DISCLAIMER)

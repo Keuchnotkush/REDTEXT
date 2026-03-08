@@ -308,6 +308,52 @@ Please note: refund requests must be submitted within 48 hours of the charge.
 
 {generic_signature}""",
     },
+    {
+        "id": "supply_chain",
+        "name": "Supply Chain Vendor Compromise",
+        "subject_lines": [
+            "Urgent: {software} Security Patch Available - Install Before {deadline}",
+            "[{software}] Critical Update Required - Action Needed",
+            "Mandatory: {software} Vendor Security Update - Ref: {reference}",
+            "{software} Integration Update - Requires Your Authorization",
+        ],
+        "body": """Hi {first_name},
+
+We're reaching out to notify you of a critical security update for {software} that requires immediate action from all authorized users.
+
+As part of our ongoing partnership with {company}, we've identified a vulnerability in the current deployment that must be patched before {deadline}.
+
+Please download and install the update using the secure link below:
+
+{phishing_link}
+
+This update has been reviewed and approved by your IT department. If you experience any issues during installation, contact your {software} account representative.
+
+{signature}""",
+    },
+    {
+        "id": "credential_breach",
+        "name": "Credential Breach Notification",
+        "subject_lines": [
+            "SECURITY ALERT: Your {company} Credentials Found in Data Breach",
+            "Action Required: Password Reset Due to Third-Party Breach",
+            "Urgent: Your {software} Account May Be Compromised",
+            "[Security Team] Mandatory Password Reset - Breach Detected",
+        ],
+        "body": """Dear {first_name},
+
+Our security monitoring has detected that credentials associated with your {company} account were found in a third-party data breach. This is NOT a breach of {company} systems, but your credentials may have been exposed through a compromised external service.
+
+To protect your account, you must reset your password immediately:
+
+{phishing_link}
+
+If you do not reset your password by {deadline}, your account will be temporarily locked as a precautionary measure.
+
+For reference, the compromised data was identified on {date} and includes email addresses and hashed passwords. We strongly recommend enabling multi-factor authentication after resetting your password.
+
+{signature}""",
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -497,6 +543,63 @@ Can you take care of this as soon as you get it? I'm counting on you.""",
   ✓ Keep it short - executives don't have long phone conversations
   ✓ Create follow-up via email for payload delivery after establishing trust by phone""",
     },
+    {
+        "id": "password_reset_escalation",
+        "name": "Password Reset / Privilege Escalation",
+        "opening": """[CALLER]: Hi, this is {caller_name} from {company} Identity and Access Management.
+I'm calling because we've flagged your account for a required privilege review.
+Is this {target_name} in {department}?""",
+        "escalation": """[CALLER]: Great. So here's what's happening — during our quarterly access review,
+we found that your account has elevated privileges that need to be re-certified.
+I have your ticket right here — #{ticket_number}, opened by {manager_name}.
+To complete the re-certification, I need you to verify your current access level
+and then we'll walk through the reset process together.
+Can you confirm your current role and the admin groups you belong to?""",
+        "objective": """GOAL: Get target to:
+  - Reveal their access level and admin group memberships
+  - Navigate to a fake IAM portal for "re-certification"
+  - Enter current credentials to "verify before reset"
+  - Approve a fake MFA prompt (push notification attack)
+  - Reveal service account credentials they manage""",
+        "red_flags_to_avoid": """MAINTAIN CREDIBILITY:
+  ✗ Don't claim their account is compromised - say it's a routine review
+  ✗ Don't ask for passwords directly - use "re-certification portal"
+  ✗ Don't rush the process - IAM teams are methodical
+  ✗ Don't call without knowing their actual admin tools
+  ✓ Know their actual admin group names (from OSINT, LinkedIn, job postings)
+  ✓ Reference real IAM tools the company uses (Azure AD, Okta, CyberArk)
+  ✓ Have a spoofed caller ID matching the IAM/Identity team extension
+  ✓ Be prepared to explain the re-certification process in detail""",
+    },
+    {
+        "id": "service_account_audit",
+        "name": "Service Account Security Audit",
+        "opening": """[CALLER]: Good {time_of_day}, this is {caller_name} from {company} Security Operations.
+I'm reaching out regarding the service account audit mandated by compliance.
+I need to speak with whoever manages the {software} service accounts in {department}.""",
+        "escalation": """[CALLER]: Right, so as part of our SOC2/ISO 27001 compliance requirements,
+we're auditing all service accounts across the organization.
+{manager_name} from {department} was notified about this two weeks ago.
+I need to verify the service accounts tied to your {software} deployment —
+specifically the account names, rotation schedule, and who has access.
+Can you pull that up for me? I'll also need you to verify the current credentials
+are valid by testing them through our audit portal.""",
+        "objective": """GOAL: Get target to:
+  - Disclose service account names and configurations
+  - Reveal password rotation schedule and last change date
+  - Test credentials through attacker-controlled "audit portal"
+  - Share API keys or tokens used by service accounts
+  - Grant temporary access to service account management console""",
+        "red_flags_to_avoid": """MAINTAIN CREDIBILITY:
+  ✗ Don't claim to be from an external audit firm without preparation
+  ✗ Don't ask for all service accounts at once - start with one system
+  ✗ Don't use compliance jargon you can't explain if questioned
+  ✗ Don't skip the reference to a manager who approved the audit
+  ✓ Research actual compliance frameworks the company follows
+  ✓ Know service account naming conventions (from error messages, job postings)
+  ✓ Reference real audit deadlines (SOC2 Type II is annual)
+  ✓ Offer to send the audit request via official-looking email as verification""",
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -602,6 +705,58 @@ closet is? I also need to plug in my diagnostic tool to run some tests.""",
             "Photograph network topology and cable labels",
             "Map internal network infrastructure and VLAN configurations",
             "Identify unencrypted network traffic or insecure protocols",
+        ],
+    },
+    {
+        "id": "copier_technician",
+        "name": "Copier / Printer Technician",
+        "appearance": "Business casual with vendor polo shirt, rolling tool case, laptop bag, badge with printer vendor logo",
+        "props": [
+            "Vendor-branded polo shirt (Canon, Ricoh, Xerox, or HP)",
+            "Rolling tool case with basic tools and toner cartridges",
+            "Laptop for 'diagnostics and firmware updates'",
+            "Printed service ticket referencing specific printer model and floor",
+            "Badge with vendor company logo and photo",
+        ],
+        "script": """Hi, I'm {name} from {printer_vendor}. We received an automated alert
+that the {printer_model} on floor {floor} is due for maintenance and a firmware
+update. I'll need to access the printer directly and connect my laptop for the
+firmware push. I also need to check the network connectivity on the print server
+side. This should take about 45 minutes. I may need to visit printers on
+other floors as well — our system flagged a few others for the same update.""",
+        "target_areas": ["Office floors with networked printers", "Print rooms and copy centers", "Network closets where print servers connect", "Executive floors (high-value targets)", "Multiple floors for 'batch maintenance'"],
+        "objectives": [
+            "Plant network implant via printer's ethernet connection",
+            "Access multiple floors under cover of 'batch maintenance'",
+            "Harvest credentials from print server or cached print jobs",
+            "Install rogue device on network ports near printers",
+            "Map office layout and identify high-value workstations during floor traversal",
+        ],
+    },
+    {
+        "id": "it_asset_inventory",
+        "name": "IT Asset Inventory Specialist",
+        "appearance": "Business casual, clipboard with asset tracking spreadsheet, barcode scanner, laptop, lanyard with IT department badge",
+        "props": [
+            "Clipboard with printed asset inventory spreadsheet showing existing records",
+            "USB barcode scanner for 'scanning asset tags'",
+            "Laptop with 'asset management software' open",
+            "Camera for 'photographing asset tags and serial numbers'",
+            "IT department badge (generic or spoofed)",
+        ],
+        "script": """Hey, I'm {name} from IT Asset Management. We're doing the annual
+hardware inventory for {company} — every workstation, monitor, and network device
+needs to be verified. I need to physically scan the asset tag on each machine
+and verify the serial number matches our records. I'll be going desk by desk
+on floor {floor} today. Building management and your department head were
+notified last week. I'll try to be quick and not disrupt anyone.""",
+        "target_areas": ["Every desk and workstation on target floor", "Server rooms and network closets", "Conference rooms with AV equipment", "Storage rooms with spare hardware", "Executive offices"],
+        "objectives": [
+            "Gain prolonged, systematic access to every workstation in the building",
+            "Photograph screens, sticky notes, and whiteboards for credential harvesting",
+            "Connect USB devices (keyloggers, implants) while 'scanning asset tags'",
+            "Map the entire network topology by documenting connected devices",
+            "Identify unattended and unlocked workstations for exploitation",
         ],
     },
 ]

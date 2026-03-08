@@ -194,8 +194,9 @@ def _html_render_phishing(data):
         '</div>'
     )
     preview_section = _html_section("EMAIL PREVIEW", email_preview)
+    mitre_section = _html_render_mitre(data.get("mitre_attack"))
 
-    return meta_section + "\n" + preview_section
+    return meta_section + "\n" + preview_section + "\n" + mitre_section
 
 
 def _html_render_smishing(data):
@@ -212,7 +213,8 @@ def _html_render_smishing(data):
     ]
     meta = _html_section("SMS/SMISHING SCENARIO", "\n".join(parts))
     msg = _html_section("SMS MESSAGE", _html_text_block(data["message"]))
-    return meta + "\n" + msg
+    mitre = _html_render_mitre(data.get("mitre_attack"))
+    return meta + "\n" + msg + "\n" + mitre
 
 
 def _html_render_quishing(data):
@@ -232,7 +234,8 @@ def _html_render_quishing(data):
     qr = _html_section("QR CODE", f'<div class="qr-block">{_h(data["qr_ascii"])}</div>')
     placement = _html_section("PLACEMENT SUGGESTIONS", _html_list(data["placement_suggestions"]))
     objectives = _html_section("OBJECTIVES", _html_list(data["objectives"]))
-    return "\n".join([meta, pretext, qr, placement, objectives])
+    mitre = _html_render_mitre(data.get("mitre_attack"))
+    return "\n".join([meta, pretext, qr, placement, objectives, mitre])
 
 
 def _html_render_vishing(data):
@@ -253,7 +256,8 @@ def _html_render_vishing(data):
         sections.append(_html_section(label, _html_text_block(data["script"][key])))
 
     prep = _html_section("PREPARATION", _html_list(data["preparation_notes"]))
-    return "\n".join([meta] + sections + [prep])
+    mitre = _html_render_mitre(data.get("mitre_attack"))
+    return "\n".join([meta] + sections + [prep, mitre])
 
 
 def _html_render_physical(data):
@@ -270,7 +274,8 @@ def _html_render_physical(data):
     areas = _html_section("TARGET AREAS", _html_list(data["target_areas"]))
     objectives = _html_section("OBJECTIVES", _html_list(data["objectives"]))
     prep = _html_section("PREPARATION", _html_list(data["preparation_notes"]))
-    return "\n".join([meta, props, script, areas, objectives, prep])
+    mitre = _html_render_mitre(data.get("mitre_attack"))
+    return "\n".join([meta, props, script, areas, objectives, prep, mitre])
 
 
 def _html_render_full(data):
@@ -292,17 +297,136 @@ def _html_render_full(data):
     recon = '<div class="phase-label">PHASE 1: RECONNAISSANCE</div>\n'
     recon += _html_section("RECON TASKS", _html_list(data["recon_tasks"]))
 
-    phishing = '<div class="phase-label">PHASE 2: PHISHING</div>\n'
+    phishing = '<div class="phase-label">PHASE 2: INITIAL ACCESS — PHISHING</div>\n'
     phishing += _html_render_phishing(data["phishing"])
 
-    vishing = '<div class="phase-label">PHASE 3: VISHING</div>\n'
+    smishing = ""
+    if "smishing" in data:
+        smishing = '<div class="phase-label">PHASE 3: INITIAL ACCESS — SMISHING</div>\n'
+        smishing += _html_render_smishing(data["smishing"])
+
+    vishing = '<div class="phase-label">PHASE 4: CREDENTIAL ACCESS — VISHING</div>\n'
     vishing += _html_render_vishing(data["social"])
 
-    physical = '<div class="phase-label">PHASE 4: PHYSICAL ACCESS</div>\n'
+    physical = '<div class="phase-label">PHASE 5: LATERAL MOVEMENT — PHYSICAL ACCESS</div>\n'
     physical += _html_render_physical(data["physical"])
 
     opsec = _html_section("OPSEC NOTES", _html_list(data["opsec_notes"]))
-    return "\n".join([banner, info, recon, phishing, vishing, physical, opsec])
+    mitre = _html_render_full_detection(data.get("mitre_attack"))
+    parts = [banner, info, recon, phishing]
+    if smishing:
+        parts.append(smishing)
+    parts.extend([vishing, physical, opsec, mitre])
+    return "\n".join(parts)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  MITRE ATT&CK FORMATTERS
+# ═══════════════════════════════════════════════════════════════
+
+def _format_mitre_section(mitre_data):
+    """Format MITRE ATT&CK data for terminal output."""
+    if not mitre_data:
+        return ""
+    lines = []
+    lines.append(f"  {_c('▸ MITRE ATT&CK', Colors.BOLD + Colors.MAGENTA)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append(_field("Tactic", mitre_data.get("tactic", "N/A")))
+    for tid, tname in mitre_data.get("techniques", []):
+        lines.append(f"    {_c(tid, Colors.YELLOW)}  {tname}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    detection = mitre_data.get("detection", {})
+    if detection:
+        lines.append(f"  {_c('▸ DETECTION ANALYSIS', Colors.BOLD + Colors.MAGENTA)}")
+        lines.append(f"    {_c('Should Detect:', Colors.GREEN)}")
+        for item in detection.get("should_detect", []):
+            lines.append(f"      {_c('✓', Colors.GREEN)} {item}")
+        lines.append(f"    {_c('Why It Often Fails:', Colors.RED)}")
+        for item in detection.get("often_fails", []):
+            lines.append(f"      {_c('✗', Colors.RED)} {item}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _format_full_detection(mitre_data):
+    """Format aggregated detection analysis for full scenario."""
+    if not mitre_data:
+        return ""
+    lines = []
+    lines.append(f"  {_c('▸ MITRE ATT&CK COVERAGE', Colors.BOLD + Colors.MAGENTA)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+
+    tactics = mitre_data.get("tactics", [])
+    if tactics:
+        lines.append(_field("Tactics", " → ".join(tactics)))
+
+    for tid, tname in mitre_data.get("techniques", []):
+        lines.append(f"    {_c(tid, Colors.YELLOW)}  {tname}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    det = mitre_data.get("detection_analysis", {})
+    if det:
+        lines.append(_header("DETECTION GAP ANALYSIS"))
+        lines.append("")
+        lines.append(f"    {_c('What Should Detect This Attack:', Colors.GREEN)}")
+        for item in det.get("should_detect", []):
+            lines.append(f"      {_c('✓', Colors.GREEN)} {item}")
+        lines.append("")
+        lines.append(f"    {_c('Why Detection Often Fails:', Colors.RED)}")
+        for item in det.get("often_fails", []):
+            lines.append(f"      {_c('✗', Colors.RED)} {item}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _html_render_mitre(mitre_data):
+    """Render MITRE ATT&CK section as HTML."""
+    if not mitre_data:
+        return ""
+    techs = "\n".join(
+        f'  <li><strong>{_h(tid)}</strong> — {_h(tname)}</li>'
+        for tid, tname in mitre_data.get("techniques", [])
+    )
+    tech_list = f'<ul class="items">\n{techs}\n</ul>'
+    meta = _html_field("Tactic", mitre_data.get("tactic", "N/A")) + "\n" + tech_list
+    parts = [_html_section("MITRE ATT&CK", meta)]
+
+    detection = mitre_data.get("detection", {})
+    if detection:
+        det_parts = ['<div class="phase-label">Should Detect</div>']
+        det_parts.append(_html_list(detection.get("should_detect", [])))
+        det_parts.append('<div class="phase-label">Why It Often Fails</div>')
+        det_parts.append(_html_list(detection.get("often_fails", [])))
+        parts.append(_html_section("DETECTION ANALYSIS", "\n".join(det_parts)))
+
+    return "\n".join(parts)
+
+
+def _html_render_full_detection(mitre_data):
+    """Render aggregated MITRE data for full scenario HTML."""
+    if not mitre_data:
+        return ""
+    techs = "\n".join(
+        f'  <li><strong>{_h(tid)}</strong> — {_h(tname)}</li>'
+        for tid, tname in mitre_data.get("techniques", [])
+    )
+    tactics = mitre_data.get("tactics", [])
+    tactic_str = " → ".join(tactics) if tactics else "N/A"
+    meta = _html_field("Attack Chain", tactic_str) + "\n" + f'<ul class="items">\n{techs}\n</ul>'
+    parts = [_html_section("MITRE ATT&CK COVERAGE", meta)]
+
+    det = mitre_data.get("detection_analysis", {})
+    if det:
+        det_parts = ['<div class="phase-label">What Should Detect This Attack</div>']
+        det_parts.append(_html_list(det.get("should_detect", [])))
+        det_parts.append('<div class="phase-label">Why Detection Often Fails</div>')
+        det_parts.append(_html_list(det.get("often_fails", [])))
+        parts.append(_html_section("DETECTION GAP ANALYSIS", "\n".join(det_parts)))
+
+    return "\n".join(parts)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -328,6 +452,7 @@ def format_phishing_email(data: dict) -> str:
         lines.append(f"    {line}")
     lines.append(f"    {_c('─' * 60, Colors.DIM)}")
     lines.append("")
+    lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
 
@@ -356,6 +481,7 @@ def format_vishing_script(data: dict) -> str:
     lines.append(f"  {_c('▸ PREPARATION', Colors.BOLD + Colors.YELLOW)}")
     lines.append(_list_items(data["preparation_notes"]))
     lines.append("")
+    lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
 
@@ -379,6 +505,7 @@ def format_smishing_message(data: dict) -> str:
     lines.append(f"    {data['message']}")
     lines.append(f"    {_c('─' * 60, Colors.DIM)}")
     lines.append("")
+    lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
 
@@ -419,6 +546,7 @@ def format_quishing_scenario(data: dict) -> str:
     lines.append(f"  {_c('▸ OBJECTIVES', Colors.BOLD + Colors.YELLOW)}")
     lines.append(_list_items(data["objectives"]))
     lines.append("")
+    lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
 
@@ -454,6 +582,7 @@ def format_physical_pretext(data: dict) -> str:
     lines.append(f"  {_c('▸ PREPARATION', Colors.BOLD + Colors.YELLOW)}")
     lines.append(_list_items(data["preparation_notes"]))
     lines.append("")
+    lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
 
@@ -474,18 +603,24 @@ def format_full_scenario(data: dict) -> str:
     lines.append(_list_items(data["recon_tasks"]))
     lines.append("")
 
-    lines.append(f"  {_c('▸ PHASE 2: PHISHING', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"  {_c('▸ PHASE 2: INITIAL ACCESS — PHISHING', Colors.BOLD + Colors.YELLOW)}")
     lines.append(format_phishing_email(data["phishing"]))
 
-    lines.append(f"  {_c('▸ PHASE 3: VISHING', Colors.BOLD + Colors.YELLOW)}")
+    if "smishing" in data:
+        lines.append(f"  {_c('▸ PHASE 3: INITIAL ACCESS — SMISHING', Colors.BOLD + Colors.YELLOW)}")
+        lines.append(format_smishing_message(data["smishing"]))
+
+    lines.append(f"  {_c('▸ PHASE 4: CREDENTIAL ACCESS — VISHING', Colors.BOLD + Colors.YELLOW)}")
     lines.append(format_vishing_script(data["social"]))
 
-    lines.append(f"  {_c('▸ PHASE 4: PHYSICAL ACCESS', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"  {_c('▸ PHASE 5: LATERAL MOVEMENT — PHYSICAL ACCESS', Colors.BOLD + Colors.YELLOW)}")
     lines.append(format_physical_pretext(data["physical"]))
 
-    lines.append(_header("🔒 OPSEC NOTES"))
+    lines.append(_header("OPSEC NOTES"))
     lines.append(_list_items(data["opsec_notes"]))
     lines.append("")
+
+    lines.append(_format_full_detection(data.get("mitre_attack")))
     return "\n".join(lines)
 
 

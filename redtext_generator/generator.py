@@ -28,6 +28,7 @@ from .templates import (
     get_localized_templates,
 )
 from .locales import load_locale
+from .mitre import get_mitre_data
 from . import qrencode
 
 
@@ -218,6 +219,7 @@ class RedtextGenerator:
             },
             "attacker_persona": persona_title,
             "urgency_level": self.urgency,
+            "mitre_attack": get_mitre_data("phishing_email", template["id"]),
             "language": self.language,
         }
     
@@ -300,6 +302,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "recommended_principles": ["authority", "urgency", "liking"],
             "preparation_notes": prep_notes,
+            "mitre_attack": get_mitre_data("vishing_script", script["id"]),
             "language": self.language,
         }
     # ───────────────────────────────────────────────────────
@@ -336,6 +339,9 @@ class RedtextGenerator:
             "{isp_name}": random.choice(["Comcast", "AT&T", "Verizon"]),
             "{fire_safety_company}": random.choice(["SafeFire Inc.", "FireGuard Solutions", "FlameSafe Services"]),
             "{area}": random.choice(["the server room HVAC", "3rd floor ventilation", "the east wing electrical panel"]),
+            "{company}": self.company_name,
+            "{printer_vendor}": random.choice(["Canon", "Ricoh", "Xerox", "HP"]),
+            "{printer_model}": random.choice(["ImageRUNNER C3530", "MP C4504", "VersaLink C7030", "LaserJet Pro M428"]),
         }
 
         script_text = pretext["script"]
@@ -365,6 +371,7 @@ class RedtextGenerator:
             "objectives": pretext["objectives"],
             "urgency_level": self.urgency,
             "preparation_notes": prep_notes,
+            "mitre_attack": get_mitre_data("physical_pretext", pretext["id"]),
             "language": self.language,
         }
 
@@ -432,6 +439,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "short_code": short_code,
             "malicious_link": smishing_link,
+            "mitre_attack": get_mitre_data("smishing", template["id"]),
             "language": self.language,
         }
 
@@ -503,6 +511,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "malicious_link": malicious_link,
             "qr_ascii": qr_ascii,
+            "mitre_attack": get_mitre_data("quishing", template["id"]),
             "language": self.language,
         }
 
@@ -525,6 +534,7 @@ class RedtextGenerator:
         quarter = _get_quarter()
         seasonal_hook = random.choice(self._seasonal_hooks[quarter])
         phishing_scenario = self.generate_phishing_email()
+        smishing_scenario = self.generate_smishing_message()
         social_scenario = self.generate_vishing_script()
         physical_scenario = self.generate_physical_pretext()
 
@@ -545,6 +555,25 @@ class RedtextGenerator:
             "Document everything for the final report",
         ])
 
+        # Aggregate MITRE ATT&CK data from all sub-scenarios
+        all_techniques = []
+        all_should_detect = []
+        all_often_fails = []
+        seen_ids = set()
+        for sub in [phishing_scenario, smishing_scenario, social_scenario, physical_scenario]:
+            mitre = sub.get("mitre_attack", {})
+            for t in mitre.get("techniques", []):
+                if t[0] not in seen_ids:
+                    seen_ids.add(t[0])
+                    all_techniques.append(t)
+            det = mitre.get("detection", {})
+            all_should_detect.extend(det.get("should_detect", []))
+            all_often_fails.extend(det.get("often_fails", []))
+
+        # Deduplicate detection items preserving order
+        all_should_detect = list(dict.fromkeys(all_should_detect))
+        all_often_fails = list(dict.fromkeys(all_often_fails))
+
         return {
             "operation_name": operation_name,
             "quarter": quarter,
@@ -552,9 +581,19 @@ class RedtextGenerator:
             "industry": self.industry["name"],
             "seasonal_hook": seasonal_hook,
             "phishing": phishing_scenario,
+            "smishing": smishing_scenario,
             "social": social_scenario,
             "physical": physical_scenario,
             "recon_tasks": recon_tasks,
             "opsec_notes": opsec_notes,
+            "mitre_attack": {
+                "techniques": all_techniques,
+                "tactics": ["Reconnaissance", "Initial Access", "Credential Access",
+                            "Privilege Escalation", "Lateral Movement", "Collection"],
+                "detection_analysis": {
+                    "should_detect": all_should_detect,
+                    "often_fails": all_often_fails,
+                },
+            },
             "language": self.language,
         }

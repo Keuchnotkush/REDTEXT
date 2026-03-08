@@ -33,7 +33,7 @@
 
 Redtext generates realistic social engineering scenarios for red team engagements. Feed it a target industry, attacker persona, and urgency level — it outputs ready-to-use phishing emails, vishing call scripts, and physical access pretexts with dynamically generated names, companies, and details.
 
-No external dependencies. Pure Python. Optional GoPhish integration for live campaign deployment.
+No external dependencies. Pure Python. MITRE ATT&CK framework integration with technique tagging and detection gap analysis. Optional GoPhish integration for live campaign deployment.
 
 ## Installation
 ```bash
@@ -81,6 +81,7 @@ python -m redtext_generator list
 | 🏢 Physical | `physical` | Cover identity, props, script, target areas |
 | ⚔️ Full | `full` | Multi-phase attack: recon → phishing → vishing → physical |
 | 🧙 Interactive | `interactive` | Step-by-step wizard with menus |
+| 🎯 ATT&CK Phase | `phase <PHASE>` | Scenario mapped to a MITRE ATT&CK kill chain phase |
 | 📋 List | `list` | All available options |
 
 ## Options
@@ -99,6 +100,16 @@ python -m redtext_generator list
 | `--export-html` | | Export as HTML report | none |
 | `--no-banner` | | Suppress ASCII banner | false |
 | `--no-disclaimer` | | Suppress disclaimer | false |
+
+### Subcommand: `phase`
+
+Generate scenarios mapped to a specific MITRE ATT&CK phase:
+
+```bash
+python -m redtext_generator phase <PHASE> [options]
+```
+
+The `phase` subcommand accepts all the same flags as regular generation modes (`--industry`, `--urgency`, `--persona`, etc.).
 
 ## Supported Industries
 
@@ -221,6 +232,75 @@ python -m redtext_generator full -l de --industry tech --urgency critical
 
 In interactive mode, language selection is the first prompt. All template text, names, months, and UI strings are translated. Software names, domain names, and template IDs remain in English.
 
+## MITRE ATT&CK Integration
+
+Every generated scenario now includes MITRE ATT&CK technique IDs, tactic classification, and detection gap analysis. This maps each social engineering pretext to real-world attack techniques so blue teams can evaluate their detection coverage.
+
+### Phase-Based Generation
+
+Use the `phase` subcommand to generate scenarios aligned to a specific ATT&CK kill chain phase:
+
+```bash
+# Generate a scenario for the initial access phase
+python -m redtext_generator phase initial-access --industry finance --urgency high
+
+# Generate a credential access scenario
+python -m redtext_generator phase credential-access --persona vendor --company "Acme Corp"
+
+# Generate a reconnaissance scenario with JSON export
+python -m redtext_generator phase recon --industry tech --export-json recon.json
+
+# Generate a lateral movement pretext in French
+python -m redtext_generator phase lateral-movement -l fr --industry healthcare
+```
+
+### Available Phases
+
+| Phase | Scenario Type | Description |
+|-------|--------------|-------------|
+| `recon` | full | Reconnaissance — map attack surface |
+| `initial-access` | phishing | Initial Access — get first foothold |
+| `execution` | phishing | Execution — run code on target |
+| `credential-access` | vishing | Credential Access — harvest credentials |
+| `privilege-escalation` | vishing | Privilege Escalation — get admin/root |
+| `defense-evasion` | smishing | Defense Evasion — avoid detection |
+| `discovery` | physical | Discovery — map internal network |
+| `lateral-movement` | physical | Lateral Movement — spread to other systems |
+| `collection` | physical | Collection — gather target data |
+| `c2` | full | Command and Control |
+| `exfiltration` | full | Exfiltration — extract data |
+
+### Detection Gap Analysis
+
+Each scenario output includes:
+- **ATT&CK Technique IDs** — e.g. `T1566.002 Phishing: Spearphishing Link`
+- **What should detect this** — controls that should catch the attack
+- **What often fails** — why those controls miss in practice
+
+This gives red teams concrete talking points for post-engagement debriefs and helps blue teams prioritize detection improvements.
+
+## New Templates
+
+Six new scenario templates added for deeper coverage:
+
+### Phishing
+| Template ID | Description |
+|-------------|-------------|
+| `supply_chain` | Supply chain compromise — impersonates trusted vendor software update |
+| `credential_breach` | Credential breach notification — exploits real breach anxiety for credential harvesting |
+
+### Vishing
+| Template ID | Description |
+|-------------|-------------|
+| `password_reset_escalation` | IAM review pretext — targets users with admin/root access for privilege escalation |
+| `service_account_audit` | Compliance audit pretext — harvests service account credentials via audit pressure |
+
+### Physical
+| Template ID | Description |
+|-------------|-------------|
+| `copier_technician` | Printer/copier maintenance pretext — gains multi-floor access to plant network implants |
+| `it_asset_inventory` | IT asset inventory pretext — desk-by-desk access for reconnaissance and device planting |
+
 ## Export
 ```bash
 # Export as JSON
@@ -249,6 +329,7 @@ redtext-generator/
 │   ├── gophish.py           # GoPhish API client (urllib)
 │   ├── gophish_bridge.py    # REDTEXT → GoPhish data conversion
 │   ├── config.py            # Config management (INI + env vars + CLI)
+│   ├── mitre.py             # MITRE ATT&CK technique mapping and detection analysis
 │   └── locales/             # Localization strings
 │       ├── __init__.py      # Locale registry and loader
 │       ├── en.py            # English (default / reference)
@@ -262,7 +343,8 @@ redtext-generator/
 │   ├── test_templates.py
 │   ├── test_qrencode.py     # QR encoder tests
 │   ├── test_gophish.py      # GoPhish integration tests
-│   └── test_locales.py      # Localization tests
+│   ├── test_locales.py      # Localization tests
+│   └── test_mitre.py        # MITRE ATT&CK integration tests
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── pyproject.toml
@@ -277,6 +359,7 @@ redtext-generator/
 - [x] HTML email export
 - [x] GoPhish integration
 - [x] Localization (FR, ES, DE)
+- [x] MITRE ATT&CK integration (technique tagging, phase-based generation, detection gap analysis)
 - [ ] AI-powered scenario customization
 
 ## Legal
