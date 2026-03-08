@@ -25,6 +25,9 @@ from .templates import (
     PHYSICAL_PRETEXTS,
     PSYCH_PRINCIPLES,
     FAKE_DOCUMENTS,
+    RECON_TEMPLATES,
+    C2_TEMPLATES,
+    OPSEC_CHECKLISTS,
     get_localized_templates,
 )
 from .locales import load_locale
@@ -126,6 +129,9 @@ class RedtextGenerator:
         self._physical_pretexts = loc["PHYSICAL_PRETEXTS"]
         self._psych_principles = loc["PSYCH_PRINCIPLES"]
         self._fake_documents = loc["FAKE_DOCUMENTS"]
+        self._recon_templates = loc["RECON_TEMPLATES"]
+        self._c2_templates = loc["C2_TEMPLATES"]
+        self._opsec_checklists = loc["OPSEC_CHECKLISTS"]
         self._strings = load_locale(language)
         self.language = language
 
@@ -219,10 +225,11 @@ class RedtextGenerator:
             },
             "attacker_persona": persona_title,
             "urgency_level": self.urgency,
+            "opsec_checklist": self._opsec_checklists.get("phishing", []),
             "mitre_attack": get_mitre_data("phishing_email", template["id"]),
             "language": self.language,
         }
-    
+
     # ───────────────────────────────────────────────────────
     #  METHOD 2: generate_vishing_script
     # ───────────────────────────────────────────────────────
@@ -302,6 +309,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "recommended_principles": ["authority", "urgency", "liking"],
             "preparation_notes": prep_notes,
+            "opsec_checklist": self._opsec_checklists.get("vishing", []),
             "mitre_attack": get_mitre_data("vishing_script", script["id"]),
             "language": self.language,
         }
@@ -371,6 +379,7 @@ class RedtextGenerator:
             "objectives": pretext["objectives"],
             "urgency_level": self.urgency,
             "preparation_notes": prep_notes,
+            "opsec_checklist": self._opsec_checklists.get("physical", []),
             "mitre_attack": get_mitre_data("physical_pretext", pretext["id"]),
             "language": self.language,
         }
@@ -439,6 +448,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "short_code": short_code,
             "malicious_link": smishing_link,
+            "opsec_checklist": self._opsec_checklists.get("smishing", []),
             "mitre_attack": get_mitre_data("smishing", template["id"]),
             "language": self.language,
         }
@@ -511,6 +521,7 @@ class RedtextGenerator:
             "urgency_level": self.urgency,
             "malicious_link": malicious_link,
             "qr_ascii": qr_ascii,
+            "opsec_checklist": self._opsec_checklists.get("quishing", []),
             "mitre_attack": get_mitre_data("quishing", template["id"]),
             "language": self.language,
         }
@@ -595,5 +606,93 @@ class RedtextGenerator:
                     "often_fails": all_often_fails,
                 },
             },
+            "language": self.language,
+        }
+
+    # ───────────────────────────────────────────────────────
+    #  METHOD 7: generate_recon_plan
+    # ───────────────────────────────────────────────────────
+
+    def generate_recon_plan(self, template_id: Optional[str] = None) -> dict:
+        """Generate a reconnaissance plan for the target."""
+        strings = self._strings
+        if template_id:
+            template = next((t for t in self._recon_templates if t["id"] == template_id), None)
+            if not template:
+                template = random.choice(self._recon_templates)
+        else:
+            template = random.choice(self._recon_templates)
+
+        software = random.choice(self.industry["software"])
+        department = random.choice(self.industry["departments"])
+
+        replacements = {
+            "{company}": self.company_name,
+            "{software}": software,
+            "{department}": department,
+        }
+
+        def _replace(text):
+            for k, v in replacements.items():
+                text = text.replace(k, v)
+            return text
+
+        passive = [_replace(t) for t in template["passive_tasks"]]
+        active = [_replace(t) for t in template["active_tasks"]]
+        deliverables = [_replace(t) for t in template["deliverables"]]
+
+        return {
+            "type": "recon",
+            "template": template["name"],
+            "description": _replace(template["description"]),
+            "target": {
+                "company": self.company_name,
+                "industry": self.industry["name"],
+                "departments": self.industry["departments"],
+                "software": self.industry["software"],
+            },
+            "passive_tasks": passive,
+            "active_tasks": active,
+            "tools": template["tools"],
+            "deliverables": deliverables,
+            "opsec_checklist": self._opsec_checklists.get("recon", []),
+            "mitre_attack": get_mitre_data("recon", template["id"]),
+            "language": self.language,
+        }
+
+    # ───────────────────────────────────────────────────────
+    #  METHOD 8: generate_c2_scenario
+    # ───────────────────────────────────────────────────────
+
+    def generate_c2_scenario(self, template_id: Optional[str] = None) -> dict:
+        """Generate a C2 infrastructure plan."""
+        if template_id:
+            template = next((t for t in self._c2_templates if t["id"] == template_id), None)
+            if not template:
+                template = random.choice(self._c2_templates)
+        else:
+            template = random.choice(self._c2_templates)
+
+        c2_domain = f"{random.choice(['analytics', 'cdn', 'api', 'static', 'assets'])}-{self.company_name.lower().replace(' ', '')}.{random.choice(['com', 'net', 'io', 'co'])}"
+        backup_domain = f"{random.choice(['updates', 'sync', 'telemetry', 'metrics'])}.{random.choice(['cloud-services.net', 'app-delivery.io', 'web-analytics.co'])}"
+
+        return {
+            "type": "c2",
+            "template": template["name"],
+            "protocol": template["protocol"],
+            "description": template["description"],
+            "target": {
+                "company": self.company_name,
+                "industry": self.industry["name"],
+            },
+            "c2_domain": c2_domain,
+            "backup_domain": backup_domain,
+            "infrastructure": template["infrastructure"],
+            "beacon_config": template["beacon_config"],
+            "cover_story": template["cover_story"],
+            "evasion_notes": template["evasion_notes"],
+            "detection_signatures": template["detection_signatures"],
+            "opsec_checklist": self._opsec_checklists.get("c2", []),
+            "mitre_attack": get_mitre_data("c2", template["id"]),
             "language": self.language,
         }

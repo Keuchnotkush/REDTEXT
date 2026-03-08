@@ -194,9 +194,10 @@ def _html_render_phishing(data):
         '</div>'
     )
     preview_section = _html_section("EMAIL PREVIEW", email_preview)
+    opsec_section = _html_render_opsec(data.get("opsec_checklist"))
     mitre_section = _html_render_mitre(data.get("mitre_attack"))
 
-    return meta_section + "\n" + preview_section + "\n" + mitre_section
+    return meta_section + "\n" + preview_section + "\n" + opsec_section + "\n" + mitre_section
 
 
 def _html_render_smishing(data):
@@ -213,8 +214,9 @@ def _html_render_smishing(data):
     ]
     meta = _html_section("SMS/SMISHING SCENARIO", "\n".join(parts))
     msg = _html_section("SMS MESSAGE", _html_text_block(data["message"]))
+    opsec = _html_render_opsec(data.get("opsec_checklist"))
     mitre = _html_render_mitre(data.get("mitre_attack"))
-    return meta + "\n" + msg + "\n" + mitre
+    return meta + "\n" + msg + "\n" + opsec + "\n" + mitre
 
 
 def _html_render_quishing(data):
@@ -234,8 +236,9 @@ def _html_render_quishing(data):
     qr = _html_section("QR CODE", f'<div class="qr-block">{_h(data["qr_ascii"])}</div>')
     placement = _html_section("PLACEMENT SUGGESTIONS", _html_list(data["placement_suggestions"]))
     objectives = _html_section("OBJECTIVES", _html_list(data["objectives"]))
+    opsec = _html_render_opsec(data.get("opsec_checklist"))
     mitre = _html_render_mitre(data.get("mitre_attack"))
-    return "\n".join([meta, pretext, qr, placement, objectives, mitre])
+    return "\n".join([meta, pretext, qr, placement, objectives, opsec, mitre])
 
 
 def _html_render_vishing(data):
@@ -256,8 +259,9 @@ def _html_render_vishing(data):
         sections.append(_html_section(label, _html_text_block(data["script"][key])))
 
     prep = _html_section("PREPARATION", _html_list(data["preparation_notes"]))
+    opsec = _html_render_opsec(data.get("opsec_checklist"))
     mitre = _html_render_mitre(data.get("mitre_attack"))
-    return "\n".join([meta] + sections + [prep, mitre])
+    return "\n".join([meta] + sections + [prep, opsec, mitre])
 
 
 def _html_render_physical(data):
@@ -275,7 +279,64 @@ def _html_render_physical(data):
     objectives = _html_section("OBJECTIVES", _html_list(data["objectives"]))
     prep = _html_section("PREPARATION", _html_list(data["preparation_notes"]))
     mitre = _html_render_mitre(data.get("mitre_attack"))
-    return "\n".join([meta, props, script, areas, objectives, prep, mitre])
+    opsec = _html_render_opsec(data.get("opsec_checklist"))
+    return "\n".join([meta, props, script, areas, objectives, prep, opsec, mitre])
+
+
+def _html_render_recon(data):
+    """Render recon plan as HTML."""
+    parts = [
+        _html_field("Template", data["template"]),
+        _html_field("Target Company", data["target"]["company"]),
+        _html_field("Industry", data["target"]["industry"]),
+    ]
+    meta = _html_section("RECONNAISSANCE PLAN", "\n".join(parts))
+    desc = _html_section("DESCRIPTION", f'<p>{_h(data["description"])}</p>')
+    tech = _html_section("TARGET TECHNOLOGY STACK", _html_list(data["target"]["software"]))
+    depts = _html_section("TARGET DEPARTMENTS", _html_list(data["target"]["departments"]))
+
+    passive_items = "\n".join(f'  <li><strong>{i}.</strong> {_h(t)}</li>' for i, t in enumerate(data["passive_tasks"], 1))
+    passive = _html_section("PASSIVE RECONNAISSANCE", f'<ul class="items">\n{passive_items}\n</ul>')
+
+    active_items = "\n".join(f'  <li><strong>{i}.</strong> {_h(t)}</li>' for i, t in enumerate(data["active_tasks"], 1))
+    active = _html_section("ACTIVE RECONNAISSANCE", f'<ul class="items">\n{active_items}\n</ul>')
+
+    tool_items = "\n".join(f'  <li><strong>{_h(n)}</strong> — {_h(d)}</li>' for n, d in data["tools"])
+    tools = _html_section("RECOMMENDED TOOLS", f'<ul class="items">\n{tool_items}\n</ul>')
+    deliverables = _html_section("DELIVERABLES", _html_list(data["deliverables"]))
+    opsec = _html_render_opsec(data.get("opsec_checklist"))
+    mitre = _html_render_mitre(data.get("mitre_attack"))
+    return "\n".join([meta, desc, tech, depts, passive, active, tools, deliverables, opsec, mitre])
+
+
+def _html_render_c2(data):
+    """Render C2 scenario as HTML."""
+    parts = [
+        _html_field("Template", data["template"]),
+        _html_field("Protocol", data["protocol"]),
+        _html_field("Target Company", data["target"]["company"]),
+        _html_field("C2 Domain", data["c2_domain"]),
+        _html_field("Backup Domain", data["backup_domain"]),
+    ]
+    meta = _html_section("COMMAND AND CONTROL PLAN", "\n".join(parts))
+    desc = _html_section("DESCRIPTION", f'<p>{_h(data["description"])}</p>')
+
+    infra_items = "\n".join(f'  <li><strong>{i}.</strong> {_h(s)}</li>' for i, s in enumerate(data["infrastructure"], 1))
+    infra = _html_section("INFRASTRUCTURE SETUP", f'<ul class="items">\n{infra_items}\n</ul>')
+
+    bc = data["beacon_config"]
+    bc_parts = []
+    for k, v in bc.items():
+        if isinstance(v, list):
+            v = ", ".join(v)
+        bc_parts.append(_html_field(k.replace("_", " ").title(), str(v)))
+    beacon = _html_section("BEACON CONFIGURATION", "\n".join(bc_parts))
+    cover = _html_section("COVER STORY", _html_text_block(data["cover_story"]))
+    evasion = _html_section("EVASION NOTES", _html_list(data["evasion_notes"]))
+    detect = _html_section("DETECTION SIGNATURES", _html_list(data["detection_signatures"]))
+    opsec = _html_render_opsec(data.get("opsec_checklist"))
+    mitre = _html_render_mitre(data.get("mitre_attack"))
+    return "\n".join([meta, desc, infra, beacon, cover, evasion, detect, opsec, mitre])
 
 
 def _html_render_full(data):
@@ -452,6 +513,7 @@ def format_phishing_email(data: dict) -> str:
         lines.append(f"    {line}")
     lines.append(f"    {_c('─' * 60, Colors.DIM)}")
     lines.append("")
+    lines.append(_format_opsec_section(data.get("opsec_checklist")))
     lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
@@ -481,6 +543,7 @@ def format_vishing_script(data: dict) -> str:
     lines.append(f"  {_c('▸ PREPARATION', Colors.BOLD + Colors.YELLOW)}")
     lines.append(_list_items(data["preparation_notes"]))
     lines.append("")
+    lines.append(_format_opsec_section(data.get("opsec_checklist")))
     lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
@@ -505,6 +568,7 @@ def format_smishing_message(data: dict) -> str:
     lines.append(f"    {data['message']}")
     lines.append(f"    {_c('─' * 60, Colors.DIM)}")
     lines.append("")
+    lines.append(_format_opsec_section(data.get("opsec_checklist")))
     lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
@@ -546,6 +610,7 @@ def format_quishing_scenario(data: dict) -> str:
     lines.append(f"  {_c('▸ OBJECTIVES', Colors.BOLD + Colors.YELLOW)}")
     lines.append(_list_items(data["objectives"]))
     lines.append("")
+    lines.append(_format_opsec_section(data.get("opsec_checklist")))
     lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
@@ -582,6 +647,123 @@ def format_physical_pretext(data: dict) -> str:
     lines.append(f"  {_c('▸ PREPARATION', Colors.BOLD + Colors.YELLOW)}")
     lines.append(_list_items(data["preparation_notes"]))
     lines.append("")
+    lines.append(_format_opsec_section(data.get("opsec_checklist")))
+    lines.append(_format_mitre_section(data.get("mitre_attack")))
+    return "\n".join(lines)
+
+
+def _format_opsec_section(checklist):
+    """Format OPSEC checklist for terminal output."""
+    if not checklist:
+        return ""
+    lines = []
+    lines.append(f"  {_c('▸ OPSEC CHECKLIST', Colors.BOLD + Colors.MAGENTA)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    for item in checklist:
+        lines.append(f"    {_c('□', Colors.YELLOW)} {item}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _html_render_opsec(checklist):
+    """Render OPSEC checklist as HTML."""
+    if not checklist:
+        return ""
+    items = "\n".join(f'  <li>&#9744; {_h(item)}</li>' for item in checklist)
+    content = f'<ul class="items">\n{items}\n</ul>'
+    return _html_section("OPSEC CHECKLIST", content)
+
+
+def format_recon_plan(data: dict) -> str:
+    lines = []
+    lines.append(_header("RECONNAISSANCE PLAN"))
+    lines.append("")
+    lines.append(_field("Template", data["template"]))
+    lines.append(_field("Target Company", data["target"]["company"]))
+    lines.append(_field("Industry", data["target"]["industry"]))
+    lines.append("")
+    lines.append(f"    {_c(data['description'], Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ TARGET TECHNOLOGY STACK', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(_list_items(data["target"]["software"]))
+    lines.append("")
+
+    lines.append(f"  {_c('▸ TARGET DEPARTMENTS', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(_list_items(data["target"]["departments"]))
+    lines.append("")
+
+    lines.append(f"  {_c('▸ PASSIVE RECONNAISSANCE', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    for i, task in enumerate(data["passive_tasks"], 1):
+        lines.append(f"    {_c(f'{i:2d}.', Colors.GREEN)} {task}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ ACTIVE RECONNAISSANCE', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    for i, task in enumerate(data["active_tasks"], 1):
+        lines.append(f"    {_c(f'{i:2d}.', Colors.RED)} {task}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ RECOMMENDED TOOLS', Colors.BOLD + Colors.YELLOW)}")
+    for tool_name, tool_desc in data["tools"]:
+        lines.append(f"    {_c(tool_name, Colors.CYAN):40s} {_c(tool_desc, Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ DELIVERABLES', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(_list_items(data["deliverables"]))
+    lines.append("")
+    lines.append(_format_opsec_section(data.get("opsec_checklist")))
+    lines.append(_format_mitre_section(data.get("mitre_attack")))
+    return "\n".join(lines)
+
+
+def format_c2_scenario(data: dict) -> str:
+    lines = []
+    lines.append(_header("COMMAND AND CONTROL PLAN"))
+    lines.append("")
+    lines.append(_field("Template", data["template"]))
+    lines.append(_field("Protocol", data["protocol"]))
+    lines.append(_field("Target Company", data["target"]["company"]))
+    lines.append(_field("C2 Domain", _c(data["c2_domain"], Colors.RED)))
+    lines.append(_field("Backup Domain", _c(data["backup_domain"], Colors.RED)))
+    lines.append("")
+    lines.append(f"    {_c(data['description'], Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ INFRASTRUCTURE SETUP', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    for i, step in enumerate(data["infrastructure"], 1):
+        lines.append(f"    {_c(f'{i:2d}.', Colors.GREEN)} {step}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ BEACON CONFIGURATION', Colors.BOLD + Colors.YELLOW)}")
+    bc = data["beacon_config"]
+    for key, val in bc.items():
+        if isinstance(val, list):
+            val = ", ".join(val)
+        lines.append(_field(key.replace("_", " ").title(), str(val)))
+    lines.append("")
+
+    lines.append(f"  {_c('▸ COVER STORY', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    for line in data["cover_story"].split("\n"):
+        lines.append(f"    {line}")
+    lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+    lines.append("")
+
+    lines.append(f"  {_c('▸ EVASION NOTES', Colors.BOLD + Colors.YELLOW)}")
+    lines.append(_list_items(data["evasion_notes"]))
+    lines.append("")
+
+    lines.append(f"  {_c('▸ DETECTION SIGNATURES (for blue team)', Colors.BOLD + Colors.RED)}")
+    lines.append(_list_items(data["detection_signatures"]))
+    lines.append("")
+    lines.append(_format_opsec_section(data.get("opsec_checklist")))
     lines.append(_format_mitre_section(data.get("mitre_attack")))
     return "\n".join(lines)
 
@@ -648,6 +830,10 @@ def export_markdown(data: dict, filepath: str) -> str:
         content = format_vishing_script(data)
     elif data.get("type") == "physical_pretext":
         content = format_physical_pretext(data)
+    elif data.get("type") == "recon":
+        content = format_recon_plan(data)
+    elif data.get("type") == "c2":
+        content = format_c2_scenario(data)
     elif "operation_name" in data:
         content = format_full_scenario(data)
     else:
@@ -681,6 +867,10 @@ def export_html(data: dict, filepath: str) -> str:
         body = _html_render_vishing(data)
     elif data.get("type") == "physical_pretext":
         body = _html_render_physical(data)
+    elif data.get("type") == "recon":
+        body = _html_render_recon(data)
+    elif data.get("type") == "c2":
+        body = _html_render_c2(data)
     elif "operation_name" in data:
         body = _html_render_full(data)
     else:
@@ -690,4 +880,132 @@ def export_html(data: dict, filepath: str) -> str:
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(page)
+    return filepath
+
+
+def export_report(data: dict, filepath: str) -> str:
+    """Export scenario as a structured red team findings report (Markdown)."""
+    os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else ".", exist_ok=True)
+
+    lines = []
+    lines.append("# Red Team Findings Report")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    # Executive Summary
+    lines.append("## Executive Summary")
+    lines.append("")
+    scenario_type = data.get("type", "full scenario")
+    if "operation_name" in data:
+        lines.append(f"**Operation:** {data['operation_name']}")
+        lines.append(f"**Target:** {data.get('target_company', 'N/A')}")
+        lines.append(f"**Industry:** {data.get('industry', 'N/A')}")
+    elif "target" in data:
+        lines.append(f"**Scenario Type:** {scenario_type.replace('_', ' ').title()}")
+        lines.append(f"**Target Company:** {data['target'].get('company', 'N/A')}")
+    lines.append("")
+
+    # MITRE ATT&CK Coverage
+    mitre = data.get("mitre_attack", {})
+    if mitre:
+        lines.append("## MITRE ATT&CK Coverage")
+        lines.append("")
+        tactics = mitre.get("tactics", [])
+        tactic = mitre.get("tactic", "")
+        if tactics:
+            lines.append(f"**Attack Chain:** {' → '.join(tactics)}")
+        elif tactic:
+            lines.append(f"**Tactic:** {tactic}")
+        lines.append("")
+        lines.append("| Technique ID | Name |")
+        lines.append("|-------------|------|")
+        for tid, tname in mitre.get("techniques", []):
+            lines.append(f"| {tid} | {tname} |")
+        lines.append("")
+
+    # Findings
+    lines.append("## Findings")
+    lines.append("")
+    if data.get("type") == "phishing_email":
+        lines.append(f"### Finding 1: Phishing Email — {data.get('template', 'N/A')}")
+        lines.append(f"- **Severity:** High")
+        lines.append(f"- **Subject:** {data.get('subject', 'N/A')}")
+        lines.append(f"- **Target:** {data.get('target', {}).get('name', 'N/A')} ({data.get('target', {}).get('department', 'N/A')})")
+        lines.append(f"- **Persona:** {data.get('attacker_persona', 'N/A')}")
+    elif data.get("type") == "vishing_script":
+        lines.append(f"### Finding 1: Vishing Script — {data.get('template', 'N/A')}")
+        lines.append(f"- **Severity:** High")
+        lines.append(f"- **Caller:** {data.get('caller', 'N/A')}")
+        lines.append(f"- **Target:** {data.get('target', {}).get('name', 'N/A')}")
+    elif data.get("type") == "recon":
+        lines.append(f"### Finding 1: Reconnaissance Plan — {data.get('template', 'N/A')}")
+        lines.append(f"- **Severity:** Medium")
+        lines.append(f"- **Passive tasks:** {len(data.get('passive_tasks', []))}")
+        lines.append(f"- **Active tasks:** {len(data.get('active_tasks', []))}")
+    elif data.get("type") == "c2":
+        lines.append(f"### Finding 1: C2 Channel — {data.get('template', 'N/A')}")
+        lines.append(f"- **Severity:** Critical")
+        lines.append(f"- **Protocol:** {data.get('protocol', 'N/A')}")
+        lines.append(f"- **C2 Domain:** {data.get('c2_domain', 'N/A')}")
+    elif "operation_name" in data:
+        finding_num = 1
+        for phase_key, phase_name in [("phishing", "Phishing"), ("smishing", "Smishing"),
+                                       ("social", "Vishing"), ("physical", "Physical")]:
+            if phase_key in data:
+                sub = data[phase_key]
+                lines.append(f"### Finding {finding_num}: {phase_name} — {sub.get('template', 'N/A')}")
+                lines.append(f"- **Severity:** High")
+                if "subject" in sub:
+                    lines.append(f"- **Subject:** {sub['subject']}")
+                lines.append("")
+                finding_num += 1
+    else:
+        lines.append(f"### Finding 1: {scenario_type.replace('_', ' ').title()}")
+        lines.append(f"- **Template:** {data.get('template', 'N/A')}")
+    lines.append("")
+
+    # Detection Gap Analysis
+    det = mitre.get("detection_analysis", mitre.get("detection", {}))
+    if det:
+        lines.append("## Detection Gap Analysis")
+        lines.append("")
+        should = det.get("should_detect", [])
+        fails = det.get("often_fails", [])
+        if should:
+            lines.append("### What Should Detect This Attack")
+            for item in should:
+                lines.append(f"- [x] {item}")
+            lines.append("")
+        if fails:
+            lines.append("### Why Detection Often Fails")
+            for item in fails:
+                lines.append(f"- [ ] {item}")
+            lines.append("")
+
+    # OPSEC Notes
+    opsec = data.get("opsec_checklist", data.get("opsec_notes", []))
+    if opsec:
+        lines.append("## Operator OPSEC Checklist")
+        lines.append("")
+        for item in opsec:
+            lines.append(f"- [ ] {item}")
+        lines.append("")
+
+    # Recommendations
+    lines.append("## Recommendations")
+    lines.append("")
+    if det.get("should_detect"):
+        lines.append("Based on the detection gap analysis, the following controls should be verified:")
+        lines.append("")
+        for i, item in enumerate(det.get("should_detect", [])[:5], 1):
+            lines.append(f"{i}. {item}")
+        lines.append("")
+
+    lines.append("---")
+    lines.append("*Generated by REDTEXT Generator | For authorized red team use only*")
+    lines.append("")
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
     return filepath
