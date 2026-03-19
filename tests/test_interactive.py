@@ -141,6 +141,7 @@ class TestInteractiveFlowQuishing(unittest.TestCase):
         "1",    # language: English
         "3",    # scenario: Quishing
         "1", "1", "1", "",
+        "",     # URL: blank for auto-generated
         "5",
     ])
     @patch("sys.stdout", new_callable=io.StringIO)

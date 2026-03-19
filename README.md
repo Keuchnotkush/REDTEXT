@@ -23,7 +23,7 @@
   ║  {Colors.YELLOW}  "Some data is too dangerous to record."║
   ║                            — SCP-2521                    ║
   ╚══════════════════════════════════════════════════════════╝
-  v1.0.0 | @keuchnotkush | For authorized use only
+  v2.1.0 | @keuchnotkush | For authorized use only
         ╚═════╝ ╚══════╝╚═╝  ╚═══╝
 ```
 
@@ -53,6 +53,9 @@ python -m redtext_generator smishing --industry finance --urgency critical
 
 # Generate a QR code phishing (quishing) scenario with ASCII QR
 python -m redtext_generator quishing --industry tech --urgency high
+
+# Generate a quishing scenario with a custom phishing URL
+python -m redtext_generator quishing --industry tech --url "https://phish.example.com/portal"
 
 # Generate a vishing script as a vendor impersonator
 python -m redtext_generator vishing --persona vendor --company "Acme Corp"
@@ -98,6 +101,7 @@ python -m redtext_generator list
 | `--export-json` | | Export as JSON file | none |
 | `--export-md` | | Export as Markdown file | none |
 | `--export-html` | | Export as HTML report | none |
+| `--url` | | Custom phishing URL for QR code (quishing only) | auto-generated |
 | `--no-banner` | | Suppress ASCII banner | false |
 | `--no-disclaimer` | | Suppress disclaimer | false |
 

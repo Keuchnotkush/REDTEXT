@@ -465,7 +465,7 @@ class RedtextGenerator:
     #    delivery method, placement, objectives, target info,
     #    attacker persona, urgency level, malicious link, and QR ASCII.
 
-    def generate_quishing_scenario(self, template_id: Optional[str] = None) -> dict:
+    def generate_quishing_scenario(self, template_id: Optional[str] = None, url: Optional[str] = None) -> dict:
         """Generate a quishing (QR code phishing) scenario."""
         strings = self._strings
         gen = strings.get("generator", {})
@@ -481,8 +481,11 @@ class RedtextGenerator:
         target_name = _random_name(strings)
         persona_title = random.choice(self.persona["titles"])
 
-        domain = random.choice(["secure-portal.co", "wifi-connect.net", "pay-verify.com", "doc-access.org", "id-check.info"])
-        malicious_link = f"https://{domain}/{_random_id(8)}"
+        if url:
+            malicious_link = url
+        else:
+            domain = random.choice(["secure-portal.co", "wifi-connect.net", "pay-verify.com", "doc-access.org", "id-check.info"])
+            malicious_link = f"https://{domain}/{_random_id(8)}"
 
         replacements = {
             "{company}": self.company_name,

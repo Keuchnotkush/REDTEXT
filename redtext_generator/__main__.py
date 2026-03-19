@@ -69,7 +69,7 @@ BANNER = f"""
   {Colors.RED}│{Colors.RESET}   {Colors.YELLOW}"The best social engineer is the one you{Colors.RESET}       {Colors.RED}│{Colors.RESET}
   {Colors.RED}│{Colors.RESET}   {Colors.YELLOW} never knew was there."{Colors.RESET}  {Colors.DIM}-- Kevin Mitnick{Colors.RESET}       {Colors.RED}│{Colors.RESET}
   {Colors.RED}└──────────────────────────────────────────────────────┘{Colors.RESET}
-  {Colors.DIM}  v1.0.0 | @keuchnotkush | authorized use only{Colors.RESET}
+  {Colors.DIM}  v2.1.0 | @keuchnotkush | authorized use only{Colors.RESET}
 """
 
 DISCLAIMER = f"""
@@ -149,8 +149,14 @@ def cmd_interactive(args):
             language=language,
         )
 
+        kwargs = {}
+        if key == "quishing":
+            custom_url = _text_prompt("Phishing URL (leave blank for auto-generated)", "")
+            if custom_url:
+                kwargs["url"] = custom_url
+
         loading_animation(f"Generating {label}", 1.5)
-        data = getattr(gen, gen_method)()
+        data = getattr(gen, gen_method)(**kwargs)
         print(fmt_func(data))
 
         while True:
@@ -231,7 +237,7 @@ def cmd_generate(args):
         data = gen.generate_smishing_message(template_id=args.template)
         output = format_smishing_message(data)
     elif args.command == "quishing":
-        data = gen.generate_quishing_scenario(template_id=args.template)
+        data = gen.generate_quishing_scenario(template_id=args.template, url=args.url)
         output = format_quishing_scenario(data)
     elif args.command == "vishing":
         data = gen.generate_vishing_script(script_id=args.template)
@@ -507,13 +513,16 @@ def main():
                        help="Export as structured red team findings report")
 
     for name, desc in [("phishing", "Generate phishing email"), ("smishing", "Generate smishing (SMS) message"),
-                       ("quishing", "Generate QR code phishing scenario"),
                        ("vishing", "Generate vishing call script"),
                        ("physical", "Generate physical access pretext"),
                        ("recon", "Generate reconnaissance plan"),
                        ("c2", "Generate C2 channel plan"),
                        ("full", "Generate full attack scenario")]:
         add_common_args(subparsers.add_parser(name, help=desc))
+
+    quishing_parser = subparsers.add_parser("quishing", help="Generate QR code phishing scenario")
+    add_common_args(quishing_parser)
+    quishing_parser.add_argument("--url", default=None, help="Custom phishing URL for QR code")
 
     subparsers.add_parser("interactive", help="Interactive scenario builder wizard")
 
