@@ -1,26 +1,51 @@
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+requires = ["setuptools>=77.0.3", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "redtext-generator"
 version = "2.1.0"
 description = "Social Engineering Scenario Builder for Authorized Red Team Operations"
 readme = "README.md"
-license = {text = GPL-3.0-or-later"}
+license = "GPL-3.0-or-later"
 requires-python = ">=3.8"
-authors = [{name = "keuchnotkush"}]
-keywords = ["social-engineering", "red-team", "penetration-testing", "cybersecurity"]
+authors = [{ name = "keuchnotkush" }]
+keywords = [
+    "social-engineering",
+    "red-team",
+    "penetration-testing",
+    "cybersecurity",
+    "security-awareness",
+    "mitre-attack",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Information Technology",
     "Topic :: Security",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
 ]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/keuchnotkush/redtext-generator"
+Repository = "https://github.com/keuchnotkush/redtext-generator"
+Issues = "https://github.com/keuchnotkush/redtext-generator/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
 
 [project.scripts]
 redtext-gen = "redtext_generator.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["redtext_generator*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
