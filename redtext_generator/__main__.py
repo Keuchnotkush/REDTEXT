@@ -467,7 +467,20 @@ def _gophish_status(args):
     print()
 
 
+def _ensure_utf8_output():
+    """Force UTF-8 stdout/stderr so the banner and box-drawing characters do
+    not crash on Windows consoles that default to a legacy code page (cp1252)."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
 def main():
+    _ensure_utf8_output()
     parser = argparse.ArgumentParser(
         prog="redtext-gen",
         description="Redtext — Social Engineering Scenario Builder for Red Teams",
