@@ -1,3 +1,42 @@
-redtext_generator/__pycache__/__init__.cpython-313.pyc
-/redtext_generator/__pycache__
-*.pyc
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Generated scenario outputs (never commit engagement artifacts)
+*.report.html
+scenario*.json
+scenario*.md
+report*.html
+report*.md
+out.json
+out.md
+out.html
+
+# Local config / secrets (GoPhish keys, etc.)
+config.ini
+.env
+*.local
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
