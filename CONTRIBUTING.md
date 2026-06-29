@@ -45,7 +45,8 @@ The easiest way to contribute is adding new scenarios to `templates.py`:
 ### Adding Features
 
 1. Fork the repo
-2. Create a feature branch: `git checkout -b feature/your-feature`
+2. Create a topic branch off `main` (see [Branching Model](#branching-model)):
+   `git checkout -b feature/your-feature`
 3. Make your changes
 4. Test all generation modes:
 ```bash
@@ -55,8 +56,29 @@ python -m redtext_generator physical -i healthcare
 python -m redtext_generator full -i tech -u critical
 python -m redtext_generator list
 ```
-5. Commit with a descriptive message: `git commit -m "feat: add recruiter persona"`
-6. Push and open a PR
+5. Run the test suite (see [Testing](#testing))
+6. Commit with a descriptive message: `git commit -m "feat: add recruiter persona"`
+7. Push and open a PR against `main`
+
+## Branching Model
+
+We use a lightweight trunk-based model:
+
+- **`main`** is the single long-lived branch. It should always be releasable and
+  green (CI passing).
+- All work happens on short-lived **topic branches** cut from `main`, named by
+  prefix:
+  - `feature/<slug>` — new capability (e.g. `feature/recruiter-persona`)
+  - `fix/<slug>` — bug fix
+  - `docs/<slug>` — documentation only
+  - `chore/<slug>` — tooling, packaging, CI, refactors
+  - `i18n/<slug>` — localization work
+- Open a PR into `main`; CI must pass before merge. Prefer **squash merges** to
+  keep `main` history linear.
+- Use [Conventional Commits](https://www.conventionalcommits.org) for messages
+  (`feat:`, `fix:`, `docs:`, `chore:`, `test:`, `refactor:`). This keeps the log
+  readable and changelog-friendly.
+- Tag releases on `main` as `vMAJOR.MINOR.PATCH` ([SemVer](https://semver.org)).
 
 ### Code Style
 
@@ -76,14 +98,26 @@ python -m redtext_generator list
 - [ ] HTML email export with realistic formatting
 - [ ] Integration with GoPhish for campaign deployment
 
-## Quick Sanity Check
+## Testing
 
-You can run a minimal check without a test suite:
+The project ships a full `pytest` suite (350+ tests, stdlib-only tool but tests
+need `pytest`):
+
+```bash
+python -m pip install -e ".[dev]"   # installs pytest
+python -m pytest -q
+```
+
+CI runs this suite on Linux and Windows across Python 3.8–3.13 for every PR.
+
+### Quick sanity checks
+
+Minimal smoke test without pytest:
 ```bash
 python -c "from redtext_generator.generator import RedtextGenerator as G; print(G().generate_phishing_email()['subject'])"
 ```
 
-Optional compile check:
+Compile check:
 ```bash
 python -m compileall redtext_generator
 ```

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/keuchnotkush/redtext-generator/security/advisories/new
+    about: Report security issues privately — do not open a public issue.
+  - name: Ethics / acceptable use questions
+    url: https://github.com/keuchnotkush/redtext-generator/blob/main/SECURITY.md#acceptable-use
+    about: Read the acceptable-use boundary before requesting offensive features.

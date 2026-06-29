@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "REDTEXT Generator"
+message: "If you use REDTEXT Generator in research or training, please cite it as below."
+type: software
+authors:
+  - alias: keuchnotkush
+    website: "https://github.com/keuchnotkush"
+repository-code: "https://github.com/keuchnotkush/redtext-generator"
+abstract: >-
+  REDTEXT Generator is a pure-Python, dependency-free tool that produces
+  fictional social-engineering scenarios (phishing, smishing, quishing,
+  vishing, and physical pretexts) for authorized red-team operations and
+  security-awareness training. Scenarios are mapped to MITRE ATT&CK techniques
+  with detection-gap analysis, support English/French/Spanish/German output,
+  and integrate optionally with GoPhish.
+keywords:
+  - social-engineering
+  - red-team
+  - penetration-testing
+  - security-awareness
+  - MITRE ATT&CK
+license: GPL-3.0-or-later
+version: 2.1.0

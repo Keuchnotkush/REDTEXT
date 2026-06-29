@@ -27,6 +27,10 @@
         ╚═════╝ ╚══════╝╚═╝  ╚═══╝
 ```
 
+[![CI](https://github.com/keuchnotkush/redtext-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/keuchnotkush/redtext-generator/actions/workflows/ci.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+
 > ⚠️ **This tool is designed for AUTHORIZED red team operations, security awareness training, and penetration testing ONLY. Unauthorized use of social engineering techniques is illegal and unethical. Always obtain written authorization before conducting any social engineering engagement.**
 
 ## What is Redtext?
@@ -348,9 +352,17 @@ redtext-generator/
 │   ├── test_qrencode.py     # QR encoder tests
 │   ├── test_gophish.py      # GoPhish integration tests
 │   ├── test_locales.py      # Localization tests
+│   ├── test_interactive.py  # Interactive TUI tests
 │   └── test_mitre.py        # MITRE ATT&CK integration tests
-├── CONTRIBUTING.md
-├── LICENSE
+├── .github/
+│   ├── workflows/ci.yml     # CI: pytest on Linux/Windows, Python 3.8–3.13
+│   ├── ISSUE_TEMPLATE/      # Bug / feature templates + security contact
+│   └── PULL_REQUEST_TEMPLATE.md
+├── CONTRIBUTING.md          # Contribution guide + branching model
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md              # Vulnerability reporting + acceptable use
+├── CITATION.cff             # How to cite in research/training
+├── LICENSE                  # GPL-3.0
 ├── pyproject.toml
 └── README.md
 ```
@@ -365,6 +377,20 @@ redtext-generator/
 - [x] Localization (FR, ES, DE)
 - [x] MITRE ATT&CK integration (technique tagging, phase-based generation, detection gap analysis)
 - [ ] AI-powered scenario customization
+
+## Contributing & Community
+
+- **Contributing:** see [CONTRIBUTING.md](CONTRIBUTING.md) — includes the branching model and how to run the test suite.
+- **Code of Conduct:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- **Security & responsible disclosure:** [SECURITY.md](SECURITY.md)
+- **Citation:** see [CITATION.cff](CITATION.cff) if you reference REDTEXT in research or training.
+
+Run the tests:
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest -q
+```
 
 ## Legal
 
