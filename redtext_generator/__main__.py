@@ -18,6 +18,7 @@ from .formatters import (
     format_full_scenario,
     format_recon_plan,
     format_c2_scenario,
+    format_defense_playbook,
     export_json,
     export_markdown,
     export_html,
@@ -29,6 +30,7 @@ from .formatters import (
 from .templates import INDUSTRIES, PERSONAS, URGENCY_TRIGGERS, PSYCH_PRINCIPLES
 from .locales import SUPPORTED_LANGUAGES
 from .mitre import ATTACK_PHASES, get_phase_scenario_type
+from .defense import build_defense_playbook
 
 
 SCENARIO_TYPES = [
@@ -275,6 +277,54 @@ def cmd_generate(args):
     if args.export_report:
         path = export_report(data, args.export_report)
         print(_c(f"\n  ✓ Exported Report: {path}", Colors.YELLOW))
+
+
+# Attack mode → generator method + keyword arg carrying the template id.
+_DEFENSE_MODES = {
+    "phishing": ("generate_phishing_email", "template_id"),
+    "smishing": ("generate_smishing_message", "template_id"),
+    "quishing": ("generate_quishing_scenario", "template_id"),
+    "vishing": ("generate_vishing_script", "script_id"),
+    "physical": ("generate_physical_pretext", "pretext_id"),
+    "recon": ("generate_recon_plan", "template_id"),
+    "c2": ("generate_c2_scenario", "template_id"),
+    "full": ("generate_full_scenario", None),
+}
+
+
+def cmd_defense(args):
+    """Generate the blue-team defense playbook for an attack scenario."""
+    gen = RedtextGenerator(
+        industry=args.industry,
+        urgency=args.urgency,
+        persona=args.persona,
+        company_name=args.company,
+        language=args.language,
+    )
+
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    method_name, id_kwarg = _DEFENSE_MODES[args.mode]
+    kwargs = {}
+    if id_kwarg and args.template:
+        kwargs[id_kwarg] = args.template
+
+    loading_animation(f"Building defense playbook ({args.mode})", 1.5)
+    scenario = getattr(gen, method_name)(**kwargs)
+    playbook = build_defense_playbook(scenario)
+
+    print(format_defense_playbook(playbook))
+
+    if args.export_json:
+        path = export_json(playbook, args.export_json)
+        print(_c(f"\n  ✓ Exported JSON: {path}", Colors.YELLOW))
+    if args.export_md:
+        path = export_markdown(playbook, args.export_md)
+        print(_c(f"\n  ✓ Exported Markdown: {path}", Colors.YELLOW))
+    if args.export_html:
+        path = export_html(playbook, args.export_html)
+        print(_c(f"\n  ✓ Exported HTML: {path}", Colors.YELLOW))
 
 
 def cmd_gophish(args):
@@ -539,6 +589,17 @@ def main():
 
     subparsers.add_parser("interactive", help="Interactive scenario builder wizard")
 
+    # ── Blue-team defense playbook subcommand ──────────────────
+    defense_parser = subparsers.add_parser(
+        "defense",
+        help="Generate a blue-team defense playbook for an attack vector",
+    )
+    add_common_args(defense_parser)
+    defense_parser.add_argument(
+        "--mode", default="full", choices=list(_DEFENSE_MODES.keys()),
+        help="Attack vector to defend against (default: full)",
+    )
+
     # ── ATT&CK phase subcommand ───────────────────────────────
     phase_parser = subparsers.add_parser(
         "phase",
@@ -594,6 +655,10 @@ def main():
 
     if args.command == "list":
         cmd_list(args)
+    elif args.command == "defense":
+        if not getattr(args, "no_disclaimer", False):
+            print(DISCLAIMER)
+        cmd_defense(args)
     elif args.command == "gophish":
         cmd_gophish(args)
     elif args.command == "interactive":
