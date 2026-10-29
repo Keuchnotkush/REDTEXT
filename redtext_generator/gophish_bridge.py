@@ -117,7 +117,7 @@ def parse_targets_csv(filepath):
     """
     required = {"email", "first_name", "last_name", "position"}
 
-    with open(filepath, "r", newline="", encoding="utf-8") as f:
+    with open(filepath, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
 
         if reader.fieldnames is None:

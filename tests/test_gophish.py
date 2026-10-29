@@ -3,14 +3,12 @@
 import csv
 import json
 import os
-import random
 import ssl
 import tempfile
-import time
 import unittest
 import urllib.error
 from io import StringIO
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from redtext_generator.config import (
     get_config_path,
@@ -24,7 +22,6 @@ from redtext_generator.gophish_bridge import (
     phishing_to_template,
     text_to_html,
 )
-
 
 # ── Helpers ────────────────────────────────────────────────────
 

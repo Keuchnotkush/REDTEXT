@@ -109,11 +109,11 @@ class GoPhishClient:
                 )
                 # Only retry on transient server errors
                 if e.code not in self._RETRYABLE_STATUS_CODES:
-                    raise last_error
+                    raise last_error from e
             except urllib.error.URLError as e:
                 last_error = GoPhishAPIError(f"Connection error: {e.reason}")
             except json.JSONDecodeError as e:
-                raise GoPhishAPIError(f"Invalid JSON response: {e}")
+                raise GoPhishAPIError(f"Invalid JSON response: {e}") from e
 
             # Exponential backoff before retry
             if attempt < self.retries - 1:

@@ -5,33 +5,32 @@ Social Engineering Scenario Builder for Authorized Red Team Operations
 """
 
 import argparse
-import sys
 import random
+import sys
 
-from .generator import RedtextGenerator
+from .defense import build_defense_playbook
 from .formatters import (
-    format_phishing_email,
-    format_smishing_message,
-    format_quishing_scenario,
-    format_vishing_script,
-    format_physical_pretext,
-    format_full_scenario,
-    format_recon_plan,
-    format_c2_scenario,
-    format_defense_playbook,
-    export_json,
-    export_markdown,
-    export_html,
-    export_report,
-    loading_animation,
     Colors,
     _c,
+    export_html,
+    export_json,
+    export_markdown,
+    export_report,
+    format_c2_scenario,
+    format_defense_playbook,
+    format_full_scenario,
+    format_phishing_email,
+    format_physical_pretext,
+    format_quishing_scenario,
+    format_recon_plan,
+    format_smishing_message,
+    format_vishing_script,
+    loading_animation,
 )
-from .templates import INDUSTRIES, PERSONAS, URGENCY_TRIGGERS, PSYCH_PRINCIPLES
+from .generator import RedtextGenerator
 from .locales import SUPPORTED_LANGUAGES
 from .mitre import ATTACK_PHASES, get_phase_scenario_type
-from .defense import build_defense_playbook
-
+from .templates import INDUSTRIES, PERSONAS, PSYCH_PRINCIPLES, URGENCY_TRIGGERS
 
 SCENARIO_TYPES = [
     ("phishing",  "Phishing Email",          "generate_phishing_email",    format_phishing_email),
@@ -71,7 +70,7 @@ BANNER = f"""
   {Colors.RED}│{Colors.RESET}   {Colors.YELLOW}"The best social engineer is the one you{Colors.RESET}       {Colors.RED}│{Colors.RESET}
   {Colors.RED}│{Colors.RESET}   {Colors.YELLOW} never knew was there."{Colors.RESET}  {Colors.DIM}-- Kevin Mitnick{Colors.RESET}       {Colors.RED}│{Colors.RESET}
   {Colors.RED}└──────────────────────────────────────────────────────┘{Colors.RESET}
-  {Colors.DIM}  v2.1.0 | @keuchnotkush | authorized use only{Colors.RESET}
+  {Colors.DIM}  v2.2.0 | @keuchnotkush | authorized use only{Colors.RESET}
 """
 
 DISCLAIMER = f"""
@@ -388,7 +387,7 @@ def _gophish_error(err):
 def _gophish_templates(args):
     """List templates from GoPhish server."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
 
     try:
         config = load_gophish_config(args)
@@ -410,7 +409,7 @@ def _gophish_templates(args):
 def _gophish_push(args):
     """Generate a phishing scenario and push it as a GoPhish template."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
     from .gophish_bridge import phishing_to_template
 
     gen = RedtextGenerator(
@@ -448,7 +447,7 @@ def _gophish_push(args):
 def _gophish_campaign(args):
     """Create a full GoPhish campaign."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
     from .gophish_bridge import build_campaign_config, parse_targets_csv
 
     try:
@@ -493,7 +492,7 @@ def _gophish_campaign(args):
 def _gophish_status(args):
     """Display campaign results."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
 
     try:
         config = load_gophish_config(args)

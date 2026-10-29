@@ -456,7 +456,6 @@ def encode(data):
     # Try all 8 mask patterns, pick the one with lowest penalty
     best_matrix = None
     best_score = float("inf")
-    best_mask = 0
 
     for pattern in range(8):
         # Build fresh matrix
@@ -476,7 +475,6 @@ def encode(data):
         if score < best_score:
             best_score = score
             best_matrix = m
-            best_mask = pattern
 
     # Add quiet zone (4 modules of white on all sides)
     qz = 4

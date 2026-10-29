@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "redtext-generator"
-version = "2.1.0"
+dynamic = ["version"]
 description = "Social Engineering Scenario Builder for Authorized Red Team Operations"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -44,8 +44,21 @@ dev = ["pytest>=7.0"]
 [project.scripts]
 redtext-gen = "redtext_generator.__main__:main"
 
+[tool.setuptools.dynamic]
+version = { attr = "redtext_generator.__version__" }
+
 [tool.setuptools.packages.find]
 include = ["redtext_generator*"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+# E501: line length is not enforced (long template strings are intentional).
+# E701: compound one-line statements are used deliberately for terse dispatch.
+ignore = ["E501", "E701"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -7,20 +7,19 @@ import unittest
 from io import StringIO
 from unittest.mock import patch
 
+from redtext_generator.__main__ import main
 from redtext_generator.defense import (
-    build_defense_playbook,
-    data_sources_for,
-    _base_technique_id,
-    _dedupe,
+    _DEFAULT_DATA_SOURCES,
     TECHNIQUE_DATA_SOURCES,
     VECTOR_RED_FLAGS,
     VECTOR_RESPONSE,
-    _DEFAULT_DATA_SOURCES,
+    _base_technique_id,
+    _dedupe,
+    build_defense_playbook,
+    data_sources_for,
 )
-from redtext_generator.formatters import format_defense_playbook, export_html, export_markdown
+from redtext_generator.formatters import export_html, export_markdown, format_defense_playbook
 from redtext_generator.generator import RedtextGenerator
-from redtext_generator.__main__ import main
-
 
 SINGLE_VECTORS = [
     ("phishing", "generate_phishing_email", "phishing_email"),

@@ -8,32 +8,17 @@ Contributor notes:
 - Any new {placeholders} must be supported in the replacements map.
 """
 
+import datetime
 import random
 import string
-import datetime
 from typing import Optional
 
-from .templates import (
-    INDUSTRIES,
-    PERSONAS,
-    URGENCY_TRIGGERS,
-    SEASONAL_HOOKS,
-    PHISHING_TEMPLATES,
-    SMISHING_TEMPLATES,
-    QUISHING_TEMPLATES,
-    VISHING_SCRIPTS,
-    PHYSICAL_PRETEXTS,
-    PSYCH_PRINCIPLES,
-    FAKE_DOCUMENTS,
-    RECON_TEMPLATES,
-    C2_TEMPLATES,
-    OPSEC_CHECKLISTS,
-    get_localized_templates,
-)
+from . import qrencode
 from .locales import load_locale
 from .mitre import get_mitre_data
-from . import qrencode
-
+from .templates import (
+    get_localized_templates,
+)
 
 # ═══════════════════════════════════════════════════════════════
 #  HELPER FUNCTIONS
@@ -618,7 +603,6 @@ class RedtextGenerator:
 
     def generate_recon_plan(self, template_id: Optional[str] = None) -> dict:
         """Generate a reconnaissance plan for the target."""
-        strings = self._strings
         if template_id:
             template = next((t for t in self._recon_templates if t["id"] == template_id), None)
             if not template:

@@ -6,8 +6,9 @@ import html as html_mod
 import json
 import os
 import re
-import time
 import sys
+import time
+
 
 def loading_animation(message: str = "Generating scenario", duration: float = 1.5):
     """Display a loading animation."""
@@ -1030,23 +1031,23 @@ def export_report(data: dict, filepath: str) -> str:
     lines.append("")
     if data.get("type") == "phishing_email":
         lines.append(f"### Finding 1: Phishing Email — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** High")
+        lines.append("- **Severity:** High")
         lines.append(f"- **Subject:** {data.get('subject', 'N/A')}")
         lines.append(f"- **Target:** {data.get('target', {}).get('name', 'N/A')} ({data.get('target', {}).get('department', 'N/A')})")
         lines.append(f"- **Persona:** {data.get('attacker_persona', 'N/A')}")
     elif data.get("type") == "vishing_script":
         lines.append(f"### Finding 1: Vishing Script — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** High")
+        lines.append("- **Severity:** High")
         lines.append(f"- **Caller:** {data.get('caller', 'N/A')}")
         lines.append(f"- **Target:** {data.get('target', {}).get('name', 'N/A')}")
     elif data.get("type") == "recon":
         lines.append(f"### Finding 1: Reconnaissance Plan — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** Medium")
+        lines.append("- **Severity:** Medium")
         lines.append(f"- **Passive tasks:** {len(data.get('passive_tasks', []))}")
         lines.append(f"- **Active tasks:** {len(data.get('active_tasks', []))}")
     elif data.get("type") == "c2":
         lines.append(f"### Finding 1: C2 Channel — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** Critical")
+        lines.append("- **Severity:** Critical")
         lines.append(f"- **Protocol:** {data.get('protocol', 'N/A')}")
         lines.append(f"- **C2 Domain:** {data.get('c2_domain', 'N/A')}")
     elif "operation_name" in data:
@@ -1056,7 +1057,7 @@ def export_report(data: dict, filepath: str) -> str:
             if phase_key in data:
                 sub = data[phase_key]
                 lines.append(f"### Finding {finding_num}: {phase_name} — {sub.get('template', 'N/A')}")
-                lines.append(f"- **Severity:** High")
+                lines.append("- **Severity:** High")
                 if "subject" in sub:
                     lines.append(f"- **Subject:** {sub['subject']}")
                 lines.append("")

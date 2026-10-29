@@ -6,23 +6,22 @@ import random
 import tempfile
 import unittest
 
-from redtext_generator.generator import RedtextGenerator
 from redtext_generator.formatters import (
+    Colors,
     _c,
-    _strip_ansi,
-    _header,
     _field,
+    _header,
     _list_items,
-    format_phishing_email,
-    format_vishing_script,
-    format_physical_pretext,
-    format_full_scenario,
+    _strip_ansi,
+    export_html,
     export_json,
     export_markdown,
-    export_html,
-    Colors,
+    format_full_scenario,
+    format_phishing_email,
+    format_physical_pretext,
+    format_vishing_script,
 )
-
+from redtext_generator.generator import RedtextGenerator
 
 # ── Helper function tests ─────────────────────────────────────
 
@@ -186,7 +185,7 @@ class TestExportJson(unittest.TestCase):
             path = f.name
         try:
             export_json(self.data, path)
-            with open(path, "r") as f:
+            with open(path) as f:
                 loaded = json.load(f)
             self.assertEqual(loaded["type"], "phishing_email")
             self.assertEqual(loaded["subject"], self.data["subject"])
@@ -221,7 +220,7 @@ class TestExportMarkdown(unittest.TestCase):
         try:
             export_markdown(self.data, path)
             self.assertTrue(os.path.exists(path))
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertTrue(len(content) > 0)
         finally:
@@ -232,7 +231,7 @@ class TestExportMarkdown(unittest.TestCase):
             path = f.name
         try:
             export_markdown(self.data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("# RedTEXT Generator Report", content)
         finally:
@@ -243,7 +242,7 @@ class TestExportMarkdown(unittest.TestCase):
             path = f.name
         try:
             export_markdown(self.data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertNotRegex(content, r"\033\[")
         finally:
@@ -257,7 +256,7 @@ class TestExportMarkdown(unittest.TestCase):
             path = f.name
         try:
             export_markdown(full_data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("# RedTEXT Generator Report", content)
             self.assertNotRegex(content, r"\033\[")
@@ -286,7 +285,7 @@ class TestExportHtml(unittest.TestCase):
         try:
             export_html(self.data, path)
             self.assertTrue(os.path.exists(path))
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertTrue(len(content) > 0)
         finally:
@@ -297,7 +296,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(self.data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("<!DOCTYPE html>", content)
             self.assertIn("<html", content)
@@ -312,7 +311,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(self.data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertNotRegex(content, r"\033\[")
         finally:
@@ -323,7 +322,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(self.data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("email-preview", content)
             self.assertIn(self.data["subject"], content)
@@ -338,7 +337,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(self.data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertNotIn("<script>", content)
             self.assertIn("&lt;script&gt;", content)
@@ -353,7 +352,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(full_data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("<!DOCTYPE html>", content)
             self.assertIn(full_data["operation_name"], content)
@@ -370,7 +369,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("SMS/SMISHING", content)
             self.assertIn("<!DOCTYPE html>", content)
@@ -385,7 +384,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("QUISHING", content)
             self.assertIn("qr-block", content)
@@ -400,7 +399,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("VISHING", content)
             self.assertIn("OPENING", content)
@@ -415,7 +414,7 @@ class TestExportHtml(unittest.TestCase):
             path = f.name
         try:
             export_html(data, path)
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn("PHYSICAL", content)
             self.assertIn("PROPS", content)

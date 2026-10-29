@@ -1,21 +1,19 @@
 """Tests for the core generator engine."""
 
-import re
+import datetime
 import random
 import unittest
-import datetime
 from unittest.mock import patch
 
 from redtext_generator.generator import (
-    _random_id,
-    _random_name,
+    RedtextGenerator,
+    _build_signature,
     _get_quarter,
     _random_date_near,
-    _build_signature,
-    RedtextGenerator,
+    _random_id,
+    _random_name,
 )
 from redtext_generator.templates import INDUSTRIES, PERSONAS, URGENCY_TRIGGERS
-
 
 # ── Helper function tests ─────────────────────────────────────
 
