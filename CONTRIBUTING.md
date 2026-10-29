@@ -83,10 +83,24 @@ We use a lightweight trunk-based model:
 ### Code Style
 
 - Python 3.8+ compatible
-- No external dependencies — stdlib only
+- No external dependencies — stdlib only (the shipped tool); `pytest` and `ruff` are dev-only
 - Use type hints where possible
 - Follow existing naming conventions
 - Keep templates realistic but clearly fictional
+
+Lint before you push (CI enforces it):
+
+```bash
+python -m pip install ruff
+ruff check .
+```
+
+Optionally install the git hooks so this runs automatically:
+
+```bash
+python -m pip install pre-commit
+pre-commit install
+```
 
 ### Ideas for Contributions
 
