@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools>=77.0.3", "wheel"]
+# setuptools 77+ is Python 3.9+, so pinning that floor broke the 3.8 build.
+# 64 is the lowest that supports dynamic `version = {attr = ...}` and is
+# available for every interpreter in the support matrix (3.8+).
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +10,10 @@ name = "redtext-generator"
 dynamic = ["version"]
 description = "Social Engineering Scenario Builder for Authorized Red Team Operations"
 readme = "README.md"
-license = "GPL-3.0-or-later"
+# Classic table form (not the PEP 639 SPDX string): the SPDX `license = "..."`
+# string needs setuptools 77+, which is Python 3.9+. This form plus the
+# classifier below keeps the build working all the way back to Python 3.8.
+license = { text = "GPL-3.0-or-later" }
 requires-python = ">=3.8"
 authors = [{ name = "keuchnotkush" }]
 keywords = [
@@ -21,6 +27,7 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Topic :: Security",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",

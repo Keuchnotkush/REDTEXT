@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Exception chaining in the GoPhish client (`raise ... from`).
 - Removed dead local variables and unused imports flagged by `ruff`.
+- Build no longer requires `setuptools>=77` (which is Python 3.9+), so the
+  package installs again on Python 3.8. The license is declared with the
+  classic table form plus a classifier instead of the PEP 639 SPDX string.
 
 ## [2.1.0]
 
