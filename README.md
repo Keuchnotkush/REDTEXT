@@ -412,7 +412,6 @@ Shipped so far:
 - [x] Localization (FR, ES, DE)
 - [x] MITRE ATT&CK integration (technique tagging, phase-based generation, detection gap analysis)
 - [x] Blue-team defense playbooks (`defense` command)
-- [ ] AI-powered scenario customization
 
 ## Contributing & Community
 
