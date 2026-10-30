@@ -5,31 +5,32 @@ Social Engineering Scenario Builder for Authorized Red Team Operations
 """
 
 import argparse
-import sys
 import random
+import sys
 
-from .generator import RedtextGenerator
+from .defense import build_defense_playbook
 from .formatters import (
-    format_phishing_email,
-    format_smishing_message,
-    format_quishing_scenario,
-    format_vishing_script,
-    format_physical_pretext,
-    format_full_scenario,
-    format_recon_plan,
-    format_c2_scenario,
-    export_json,
-    export_markdown,
-    export_html,
-    export_report,
-    loading_animation,
     Colors,
     _c,
+    export_html,
+    export_json,
+    export_markdown,
+    export_report,
+    format_c2_scenario,
+    format_defense_playbook,
+    format_full_scenario,
+    format_phishing_email,
+    format_physical_pretext,
+    format_quishing_scenario,
+    format_recon_plan,
+    format_smishing_message,
+    format_vishing_script,
+    loading_animation,
 )
-from .templates import INDUSTRIES, PERSONAS, URGENCY_TRIGGERS, PSYCH_PRINCIPLES
+from .generator import RedtextGenerator
 from .locales import SUPPORTED_LANGUAGES
 from .mitre import ATTACK_PHASES, get_phase_scenario_type
-
+from .templates import INDUSTRIES, PERSONAS, PSYCH_PRINCIPLES, URGENCY_TRIGGERS
 
 SCENARIO_TYPES = [
     ("phishing",  "Phishing Email",          "generate_phishing_email",    format_phishing_email),
@@ -69,7 +70,7 @@ BANNER = f"""
   {Colors.RED}│{Colors.RESET}   {Colors.YELLOW}"The best social engineer is the one you{Colors.RESET}       {Colors.RED}│{Colors.RESET}
   {Colors.RED}│{Colors.RESET}   {Colors.YELLOW} never knew was there."{Colors.RESET}  {Colors.DIM}-- Kevin Mitnick{Colors.RESET}       {Colors.RED}│{Colors.RESET}
   {Colors.RED}└──────────────────────────────────────────────────────┘{Colors.RESET}
-  {Colors.DIM}  v2.1.0 | @keuchnotkush | authorized use only{Colors.RESET}
+  {Colors.DIM}  v2.2.0 | @keuchnotkush | authorized use only{Colors.RESET}
 """
 
 DISCLAIMER = f"""
@@ -277,6 +278,54 @@ def cmd_generate(args):
         print(_c(f"\n  ✓ Exported Report: {path}", Colors.YELLOW))
 
 
+# Attack mode → generator method + keyword arg carrying the template id.
+_DEFENSE_MODES = {
+    "phishing": ("generate_phishing_email", "template_id"),
+    "smishing": ("generate_smishing_message", "template_id"),
+    "quishing": ("generate_quishing_scenario", "template_id"),
+    "vishing": ("generate_vishing_script", "script_id"),
+    "physical": ("generate_physical_pretext", "pretext_id"),
+    "recon": ("generate_recon_plan", "template_id"),
+    "c2": ("generate_c2_scenario", "template_id"),
+    "full": ("generate_full_scenario", None),
+}
+
+
+def cmd_defense(args):
+    """Generate the blue-team defense playbook for an attack scenario."""
+    gen = RedtextGenerator(
+        industry=args.industry,
+        urgency=args.urgency,
+        persona=args.persona,
+        company_name=args.company,
+        language=args.language,
+    )
+
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    method_name, id_kwarg = _DEFENSE_MODES[args.mode]
+    kwargs = {}
+    if id_kwarg and args.template:
+        kwargs[id_kwarg] = args.template
+
+    loading_animation(f"Building defense playbook ({args.mode})", 1.5)
+    scenario = getattr(gen, method_name)(**kwargs)
+    playbook = build_defense_playbook(scenario)
+
+    print(format_defense_playbook(playbook))
+
+    if args.export_json:
+        path = export_json(playbook, args.export_json)
+        print(_c(f"\n  ✓ Exported JSON: {path}", Colors.YELLOW))
+    if args.export_md:
+        path = export_markdown(playbook, args.export_md)
+        print(_c(f"\n  ✓ Exported Markdown: {path}", Colors.YELLOW))
+    if args.export_html:
+        path = export_html(playbook, args.export_html)
+        print(_c(f"\n  ✓ Exported HTML: {path}", Colors.YELLOW))
+
+
 def cmd_gophish(args):
     """Dispatch GoPhish sub-subcommands."""
     subcmd = getattr(args, "gophish_command", None)
@@ -338,7 +387,7 @@ def _gophish_error(err):
 def _gophish_templates(args):
     """List templates from GoPhish server."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
 
     try:
         config = load_gophish_config(args)
@@ -360,7 +409,7 @@ def _gophish_templates(args):
 def _gophish_push(args):
     """Generate a phishing scenario and push it as a GoPhish template."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
     from .gophish_bridge import phishing_to_template
 
     gen = RedtextGenerator(
@@ -398,7 +447,7 @@ def _gophish_push(args):
 def _gophish_campaign(args):
     """Create a full GoPhish campaign."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
     from .gophish_bridge import build_campaign_config, parse_targets_csv
 
     try:
@@ -443,7 +492,7 @@ def _gophish_campaign(args):
 def _gophish_status(args):
     """Display campaign results."""
     from .config import load_gophish_config
-    from .gophish import GoPhishClient, GoPhishAPIError
+    from .gophish import GoPhishAPIError, GoPhishClient
 
     try:
         config = load_gophish_config(args)
@@ -467,7 +516,20 @@ def _gophish_status(args):
     print()
 
 
+def _ensure_utf8_output():
+    """Force UTF-8 stdout/stderr so the banner and box-drawing characters do
+    not crash on Windows consoles that default to a legacy code page (cp1252)."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
 def main():
+    _ensure_utf8_output()
     parser = argparse.ArgumentParser(
         prog="redtext-gen",
         description="Redtext — Social Engineering Scenario Builder for Red Teams",
@@ -526,6 +588,17 @@ def main():
 
     subparsers.add_parser("interactive", help="Interactive scenario builder wizard")
 
+    # ── Blue-team defense playbook subcommand ──────────────────
+    defense_parser = subparsers.add_parser(
+        "defense",
+        help="Generate a blue-team defense playbook for an attack vector",
+    )
+    add_common_args(defense_parser)
+    defense_parser.add_argument(
+        "--mode", default="full", choices=list(_DEFENSE_MODES.keys()),
+        help="Attack vector to defend against (default: full)",
+    )
+
     # ── ATT&CK phase subcommand ───────────────────────────────
     phase_parser = subparsers.add_parser(
         "phase",
@@ -581,6 +654,10 @@ def main():
 
     if args.command == "list":
         cmd_list(args)
+    elif args.command == "defense":
+        if not getattr(args, "no_disclaimer", False):
+            print(DISCLAIMER)
+        cmd_defense(args)
     elif args.command == "gophish":
         cmd_gophish(args)
     elif args.command == "interactive":

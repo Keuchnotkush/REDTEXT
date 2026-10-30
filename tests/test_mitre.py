@@ -1,9 +1,9 @@
 """Tests for MITRE ATT&CK integration in REDTEXT scenarios."""
 
-import re
 import random
 import unittest
 
+from redtext_generator.generator import RedtextGenerator
 from redtext_generator.mitre import (
     ATTACK_PHASES,
     PHASE_TO_SCENARIO,
@@ -11,8 +11,6 @@ from redtext_generator.mitre import (
     get_mitre_data,
     get_phase_scenario_type,
 )
-from redtext_generator.generator import RedtextGenerator
-
 
 # ── Test mitre.py module directly ─────────────────────────────
 

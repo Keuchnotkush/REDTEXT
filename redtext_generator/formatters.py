@@ -6,8 +6,9 @@ import html as html_mod
 import json
 import os
 import re
-import time
 import sys
+import time
+
 
 def loading_animation(message: str = "Generating scenario", duration: float = 1.5):
     """Display a loading animation."""
@@ -807,6 +808,103 @@ def format_full_scenario(data: dict) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════
+#  DEFENSE PLAYBOOK FORMATTERS (blue team)
+# ═══════════════════════════════════════════════════════════════
+
+def format_defense_playbook(data: dict) -> str:
+    """Format a blue-team defense playbook for terminal output."""
+    lines = []
+    lines.append(_header("🛡  BLUE TEAM DEFENSE PLAYBOOK"))
+    lines.append("")
+    lines.append(_field("Attack Vector", _c(data["vector_label"], Colors.CYAN + Colors.BOLD)))
+    lines.append(_field("Target", data.get("target_company", "N/A")))
+    lines.append(_field("ATT&CK Tactic", data.get("tactic", "N/A")))
+    lines.append("")
+
+    if data.get("techniques"):
+        lines.append(f"  {_c('▸ TECHNIQUES IN SCOPE', Colors.BOLD + Colors.MAGENTA)}")
+        lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+        for tid, tname in data["techniques"]:
+            lines.append(f"    {_c(tid, Colors.YELLOW)}  {tname}")
+        lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+        lines.append("")
+
+    if data.get("data_sources"):
+        lines.append(f"  {_c('▸ TELEMETRY TO COLLECT', Colors.BOLD + Colors.CYAN)}")
+        for item in data["data_sources"]:
+            lines.append(f"    {_c('◆', Colors.CYAN)} {item}")
+        lines.append("")
+
+    if data.get("detection_controls"):
+        lines.append(f"  {_c('▸ DETECTION CONTROLS TO VERIFY', Colors.BOLD + Colors.GREEN)}")
+        for item in data["detection_controls"]:
+            lines.append(f"    {_c('✓', Colors.GREEN)} {item}")
+        lines.append("")
+
+    if data.get("known_gaps"):
+        lines.append(f"  {_c('▸ KNOWN GAPS (where this slips through)', Colors.BOLD + Colors.RED)}")
+        for item in data["known_gaps"]:
+            lines.append(f"    {_c('✗', Colors.RED)} {item}")
+        lines.append("")
+
+    if data.get("user_red_flags"):
+        lines.append(f"  {_c('▸ USER RED FLAGS', Colors.BOLD + Colors.YELLOW)}")
+        for item in data["user_red_flags"]:
+            lines.append(f"    {_c('⚑', Colors.YELLOW)} {item}")
+        lines.append("")
+
+    if data.get("response_steps"):
+        lines.append(f"  {_c('▸ INCIDENT RESPONSE STEPS', Colors.BOLD + Colors.CYAN)}")
+        lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+        for i, step in enumerate(data["response_steps"], 1):
+            lines.append(f"    {_c(f'{i:2d}.', Colors.CYAN)} {step}")
+        lines.append(f"    {_c('─' * 60, Colors.DIM)}")
+        lines.append("")
+
+    if data.get("awareness_points"):
+        lines.append(f"  {_c('▸ DEBRIEF TALKING POINTS', Colors.BOLD + Colors.GREEN)}")
+        lines.append(_list_items(data["awareness_points"]))
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def _html_render_defense(data):
+    """Render a blue-team defense playbook as HTML."""
+    parts = [
+        _html_field("Attack Vector", data["vector_label"]),
+        _html_field("Target", data.get("target_company", "N/A")),
+        _html_field("ATT&CK Tactic", data.get("tactic", "N/A")),
+    ]
+    meta = _html_section("BLUE TEAM DEFENSE PLAYBOOK", "\n".join(parts))
+
+    sections = [meta]
+    if data.get("techniques"):
+        techs = "\n".join(
+            f'  <li><strong>{_h(tid)}</strong> — {_h(tname)}</li>'
+            for tid, tname in data["techniques"]
+        )
+        sections.append(_html_section("TECHNIQUES IN SCOPE", f'<ul class="items">\n{techs}\n</ul>'))
+    if data.get("data_sources"):
+        sections.append(_html_section("TELEMETRY TO COLLECT", _html_list(data["data_sources"])))
+    if data.get("detection_controls"):
+        sections.append(_html_section("DETECTION CONTROLS TO VERIFY", _html_list(data["detection_controls"])))
+    if data.get("known_gaps"):
+        sections.append(_html_section("KNOWN GAPS", _html_list(data["known_gaps"])))
+    if data.get("user_red_flags"):
+        sections.append(_html_section("USER RED FLAGS", _html_list(data["user_red_flags"])))
+    if data.get("response_steps"):
+        steps = "\n".join(
+            f'  <li><strong>{i}.</strong> {_h(s)}</li>'
+            for i, s in enumerate(data["response_steps"], 1)
+        )
+        sections.append(_html_section("INCIDENT RESPONSE STEPS", f'<ul class="items">\n{steps}\n</ul>'))
+    if data.get("awareness_points"):
+        sections.append(_html_section("DEBRIEF TALKING POINTS", _html_list(data["awareness_points"])))
+    return "\n".join(sections)
+
+
+# ═══════════════════════════════════════════════════════════════
 #  FILE EXPORT
 # ═══════════════════════════════════════════════════════════════
 
@@ -834,6 +932,8 @@ def export_markdown(data: dict, filepath: str) -> str:
         content = format_recon_plan(data)
     elif data.get("type") == "c2":
         content = format_c2_scenario(data)
+    elif data.get("type") == "defense_playbook":
+        content = format_defense_playbook(data)
     elif "operation_name" in data:
         content = format_full_scenario(data)
     else:
@@ -871,6 +971,8 @@ def export_html(data: dict, filepath: str) -> str:
         body = _html_render_recon(data)
     elif data.get("type") == "c2":
         body = _html_render_c2(data)
+    elif data.get("type") == "defense_playbook":
+        body = _html_render_defense(data)
     elif "operation_name" in data:
         body = _html_render_full(data)
     else:
@@ -929,23 +1031,23 @@ def export_report(data: dict, filepath: str) -> str:
     lines.append("")
     if data.get("type") == "phishing_email":
         lines.append(f"### Finding 1: Phishing Email — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** High")
+        lines.append("- **Severity:** High")
         lines.append(f"- **Subject:** {data.get('subject', 'N/A')}")
         lines.append(f"- **Target:** {data.get('target', {}).get('name', 'N/A')} ({data.get('target', {}).get('department', 'N/A')})")
         lines.append(f"- **Persona:** {data.get('attacker_persona', 'N/A')}")
     elif data.get("type") == "vishing_script":
         lines.append(f"### Finding 1: Vishing Script — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** High")
+        lines.append("- **Severity:** High")
         lines.append(f"- **Caller:** {data.get('caller', 'N/A')}")
         lines.append(f"- **Target:** {data.get('target', {}).get('name', 'N/A')}")
     elif data.get("type") == "recon":
         lines.append(f"### Finding 1: Reconnaissance Plan — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** Medium")
+        lines.append("- **Severity:** Medium")
         lines.append(f"- **Passive tasks:** {len(data.get('passive_tasks', []))}")
         lines.append(f"- **Active tasks:** {len(data.get('active_tasks', []))}")
     elif data.get("type") == "c2":
         lines.append(f"### Finding 1: C2 Channel — {data.get('template', 'N/A')}")
-        lines.append(f"- **Severity:** Critical")
+        lines.append("- **Severity:** Critical")
         lines.append(f"- **Protocol:** {data.get('protocol', 'N/A')}")
         lines.append(f"- **C2 Domain:** {data.get('c2_domain', 'N/A')}")
     elif "operation_name" in data:
@@ -955,7 +1057,7 @@ def export_report(data: dict, filepath: str) -> str:
             if phase_key in data:
                 sub = data[phase_key]
                 lines.append(f"### Finding {finding_num}: {phase_name} — {sub.get('template', 'N/A')}")
-                lines.append(f"- **Severity:** High")
+                lines.append("- **Severity:** High")
                 if "subject" in sub:
                     lines.append(f"- **Subject:** {sub['subject']}")
                 lines.append("")

@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest a new template, scenario, or capability
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature ideas must stay within the project's ethical scope: defensive,
+        educational, and for authorized engagements only. See CONTRIBUTING.md.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What are you trying to do that REDTEXT can't do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: New industry, persona, scenario mode, export format, etc.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - New industry
+        - New persona
+        - New scenario template
+        - New generation mode
+        - Localization
+        - Tooling / DX
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: ethics
+    attributes:
+      label: Ethics
+      options:
+        - label: This feature is for authorized / defensive / educational use and does not weaponize the tool against non-consenting targets.
+          required: true

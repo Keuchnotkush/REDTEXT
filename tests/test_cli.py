@@ -1,10 +1,22 @@
 """Tests for CLI argument parsing and command dispatch."""
 
+import io
 import unittest
 from io import StringIO
 from unittest.mock import patch
 
 from redtext_generator.__main__ import main
+
+
+class TestCLIEncoding(unittest.TestCase):
+    def test_banner_survives_legacy_codepage(self):
+        # Simulate a stock Windows console: stdout backed by cp1252 with strict
+        # errors. Without the UTF-8 reconfigure in main(), printing the banner
+        # (box-drawing/block characters) would raise UnicodeEncodeError.
+        legacy = io.TextIOWrapper(io.BytesIO(), encoding="cp1252", errors="strict")
+        with patch("sys.argv", ["redtext-gen", "list"]):
+            with patch("sys.stdout", legacy):
+                main()  # must not raise UnicodeEncodeError
 
 
 class TestCLINoArgs(unittest.TestCase):

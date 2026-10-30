@@ -3,15 +3,15 @@
 import unittest
 
 from redtext_generator.templates import (
+    FAKE_DOCUMENTS,
     INDUSTRIES,
     PERSONAS,
-    URGENCY_TRIGGERS,
-    SEASONAL_HOOKS,
     PHISHING_TEMPLATES,
-    VISHING_SCRIPTS,
     PHYSICAL_PRETEXTS,
     PSYCH_PRINCIPLES,
-    FAKE_DOCUMENTS,
+    SEASONAL_HOOKS,
+    URGENCY_TRIGGERS,
+    VISHING_SCRIPTS,
 )
 
 
@@ -33,7 +33,7 @@ class TestIndustries(unittest.TestCase):
                                 f"Industry '{key}' has empty '{field}'")
 
     def test_name_is_string(self):
-        for key, data in INDUSTRIES.items():
+        for _key, data in INDUSTRIES.items():
             self.assertIsInstance(data["name"], str)
 
 

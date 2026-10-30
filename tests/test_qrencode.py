@@ -2,7 +2,7 @@
 
 import unittest
 
-from redtext_generator.qrencode import encode, render_ascii, _select_version, _CAPACITY, _SIZE
+from redtext_generator.qrencode import _CAPACITY, _SIZE, _select_version, encode, render_ascii
 
 
 class TestSelectVersion(unittest.TestCase):

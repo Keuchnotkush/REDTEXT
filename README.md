@@ -23,9 +23,13 @@
   ║  {Colors.YELLOW}  "Some data is too dangerous to record."║
   ║                            — SCP-2521                    ║
   ╚══════════════════════════════════════════════════════════╝
-  v2.1.0 | @keuchnotkush | For authorized use only
+  v2.2.0 | @keuchnotkush | For authorized use only
         ╚═════╝ ╚══════╝╚═╝  ╚═══╝
 ```
+
+[![CI](https://github.com/keuchnotkush/redtext-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/keuchnotkush/redtext-generator/actions/workflows/ci.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 
 > ⚠️ **This tool is designed for AUTHORIZED red team operations, security awareness training, and penetration testing ONLY. Unauthorized use of social engineering techniques is illegal and unethical. Always obtain written authorization before conducting any social engineering engagement.**
 
@@ -83,6 +87,7 @@ python -m redtext_generator list
 | 📞 Vishing | `vishing` | Call script with opening, escalation, objectives |
 | 🏢 Physical | `physical` | Cover identity, props, script, target areas |
 | ⚔️ Full | `full` | Multi-phase attack: recon → phishing → vishing → physical |
+| 🛡️ Defense | `defense` | Blue-team playbook: detection, response, and awareness for a vector |
 | 🧙 Interactive | `interactive` | Step-by-step wizard with menus |
 | 🎯 ATT&CK Phase | `phase <PHASE>` | Scenario mapped to a MITRE ATT&CK kill chain phase |
 | 📋 List | `list` | All available options |
@@ -283,6 +288,34 @@ Each scenario output includes:
 
 This gives red teams concrete talking points for post-engagement debriefs and helps blue teams prioritize detection improvements.
 
+## Blue Team: Defense Playbooks
+
+The `defense` command flips any scenario around for the defenders. It takes the
+attack you'd generate and produces a **blue-team playbook** — no offensive
+content, just what a SOC or awareness team needs:
+
+- **Telemetry to collect** — the log sources and sensors each ATT&CK technique requires
+- **Detection controls to verify** — what should catch the attack
+- **Known gaps** — where it slips through in practice
+- **User red flags** — the warning signs a target can spot
+- **Incident response steps** — an ordered triage → contain → recover checklist
+- **Debrief talking points** — for the post-engagement readout
+
+```bash
+# Defense playbook for a quishing attack on finance
+python -m redtext_generator defense --mode quishing --industry finance
+
+# Full multi-vector playbook, exported for the blue team
+python -m redtext_generator defense --mode full --export-html defense.html
+
+# Playbook for a specific vector in Spanish, as Markdown
+python -m redtext_generator defense --mode vishing -l es --export-md playbook.md
+```
+
+`--mode` accepts any vector: `phishing`, `smishing`, `quishing`, `vishing`,
+`physical`, `recon`, `c2`, or `full` (default). The playbook exports to JSON,
+Markdown, and HTML like every other scenario.
+
 ## New Templates
 
 Six new scenario templates added for deeper coverage:
@@ -334,6 +367,7 @@ redtext-generator/
 │   ├── gophish_bridge.py    # REDTEXT → GoPhish data conversion
 │   ├── config.py            # Config management (INI + env vars + CLI)
 │   ├── mitre.py             # MITRE ATT&CK technique mapping and detection analysis
+│   ├── defense.py           # Blue-team defense playbook generation
 │   └── locales/             # Localization strings
 │       ├── __init__.py      # Locale registry and loader
 │       ├── en.py            # English (default / reference)
@@ -348,9 +382,18 @@ redtext-generator/
 │   ├── test_qrencode.py     # QR encoder tests
 │   ├── test_gophish.py      # GoPhish integration tests
 │   ├── test_locales.py      # Localization tests
-│   └── test_mitre.py        # MITRE ATT&CK integration tests
-├── CONTRIBUTING.md
-├── LICENSE
+│   ├── test_interactive.py  # Interactive TUI tests
+│   ├── test_mitre.py        # MITRE ATT&CK integration tests
+│   └── test_defense.py      # Blue-team defense playbook tests
+├── .github/
+│   ├── workflows/ci.yml     # CI: pytest on Linux/Windows, Python 3.8–3.13
+│   ├── ISSUE_TEMPLATE/      # Bug / feature templates + security contact
+│   └── PULL_REQUEST_TEMPLATE.md
+├── CONTRIBUTING.md          # Contribution guide + branching model
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md              # Vulnerability reporting + acceptable use
+├── CITATION.cff             # How to cite in research/training
+├── LICENSE                  # GPL-3.0
 ├── pyproject.toml
 └── README.md
 ```
@@ -364,7 +407,22 @@ redtext-generator/
 - [x] GoPhish integration
 - [x] Localization (FR, ES, DE)
 - [x] MITRE ATT&CK integration (technique tagging, phase-based generation, detection gap analysis)
+- [x] Blue-team defense playbooks (`defense` command)
 - [ ] AI-powered scenario customization
+
+## Contributing & Community
+
+- **Contributing:** see [CONTRIBUTING.md](CONTRIBUTING.md) — includes the branching model and how to run the test suite.
+- **Code of Conduct:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- **Security & responsible disclosure:** [SECURITY.md](SECURITY.md)
+- **Citation:** see [CITATION.cff](CITATION.cff) if you reference REDTEXT in research or training.
+
+Run the tests:
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest -q
+```
 
 ## Legal
 

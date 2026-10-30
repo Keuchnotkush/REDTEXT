@@ -1,13 +1,12 @@
 """Tests for the localization system."""
 
-import re
 import random
+import re
 import unittest
 
-from redtext_generator.locales import load_locale, validate_locale, SUPPORTED_LANGUAGES
-from redtext_generator.templates import get_localized_templates
 from redtext_generator.generator import RedtextGenerator
-
+from redtext_generator.locales import SUPPORTED_LANGUAGES, load_locale, validate_locale
+from redtext_generator.templates import get_localized_templates
 
 # ── Locale registry tests ────────────────────────────────────
 

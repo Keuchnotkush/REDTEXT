@@ -5,16 +5,14 @@ import os
 import random
 import tempfile
 import unittest
-from unittest.mock import patch, call
+from unittest.mock import patch
 
 from redtext_generator.__main__ import (
+    _interactive_header,
     _menu_prompt,
     _text_prompt,
-    _interactive_header,
     cmd_interactive,
-    SCENARIO_TYPES,
 )
-
 
 # ── Menu prompt tests ─────────────────────────────────────────
 
