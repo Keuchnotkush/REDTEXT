@@ -400,6 +400,10 @@ redtext-generator/
 
 ## Roadmap
 
+📍 **See [ROADMAP.md](ROADMAP.md)** for where Redtext is headed — the detection & defense framework direction, with work tracked across [milestones](https://github.com/Keuchnotkush/REDTEXT/milestones) and [good first issues](https://github.com/Keuchnotkush/REDTEXT/labels/good%20first%20issue) for contributors.
+
+Shipped so far:
+
 - [x] SMS/Smishing templates
 - [x] QR code phishing scenarios
 - [x] Interactive TUI mode
