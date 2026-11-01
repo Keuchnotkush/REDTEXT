@@ -170,6 +170,19 @@ Open an issue with:
 2. Make sure documentation reflects any new options or placeholders
 3. Open a PR with a clear description and example output
 
-## License
+## License and Contributor License Agreement (CLA)
 
-By contributing, you agree that your contributions will be licensed under the GPL v3 License.
+By contributing, you agree that your contributions will be licensed under the
+GPL-3.0-or-later license.
+
+In addition, external contributions require a **Contributor License Agreement
+(CLA)**. By submitting a contribution you grant the project a broad, irrevocable
+license to your contribution (including a patent grant), while **retaining your
+own copyright** — this is a license grant, not an assignment. The CLA lets the
+project relicense or dual-license in the future without having to track down and
+re-obtain consent from every past contributor.
+
+The rationale is recorded in [ADR-0001](docs/adr/0001-license.md). The signing
+mechanism (a CLA-assistant bot or a signed statement on your first PR) will be
+linked here; until it is in place, note in your PR that you agree to the terms
+above and a maintainer will follow up.
