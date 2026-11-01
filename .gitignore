@@ -28,6 +28,11 @@ report*.md
 out.json
 out.md
 out.html
+# Ad-hoc demo/scratch outputs (any case) and engagement working dirs
+[Dd]emo
+[Dd]emo.*
+*.engagement.*
+engagements/
 
 # Local config / secrets (GoPhish keys, etc.)
 config.ini
