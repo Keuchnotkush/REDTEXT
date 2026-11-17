@@ -1,6 +1,6 @@
 # 🔴 Redtext Generator
 
-**Social Engineering Scenario Builder for Authorized Red Team Operations**
+**Social-engineering detection & defense framework — an operator↔defender loop. The offensive scenario generator is the engine; detection and awareness content is the headline.**
 ```
   ██████╗ ███████╗██████╗ ████████╗███████╗██╗  ██╗████████╗
   ██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝
@@ -35,9 +35,27 @@
 
 ## What is Redtext?
 
-Redtext generates realistic social engineering scenarios for red team engagements. Feed it a target industry, attacker persona, and urgency level — it outputs ready-to-use phishing emails, vishing call scripts, and physical access pretexts with dynamically generated names, companies, and details.
+Redtext is a social-engineering **detection & defense** framework built as a *loop*:
+a red-team operator runs an authorized engagement, and the defender turns it into
+telemetry, detection content, and awareness material mapped to the same MITRE
+ATT&CK techniques. **Offensive generation is the engine, not the product** —
+detection and defense is the headline.
 
-No external dependencies. Pure Python. MITRE ATT&CK framework integration with technique tagging and detection gap analysis. Optional GoPhish integration for live campaign deployment.
+- **Operator side (the engine):** feed it a target industry, attacker persona, and
+  urgency level, and it generates realistic scenarios — phishing emails, vishing
+  scripts, and physical-access pretexts — with dynamically generated names,
+  companies, and details, for *authorized* engagements only.
+- **Defender side (the headline):** the `defense` command turns any scenario into a
+  blue-team playbook — telemetry to collect, detection controls to verify, known
+  gaps, user-facing red flags, and incident-response steps — mapped to the
+  scenario's ATT&CK techniques, with **no offensive content in the output**.
+
+No external dependencies. Pure Python, stdlib-only runtime core. MITRE ATT&CK
+integration with technique tagging and detection-gap analysis. Optional GoPhish
+integration for live campaign deployment.
+
+See [`docs/vision.md`](docs/vision.md) for the full positioning and the
+operator↔defender loop.
 
 ## Installation
 ```bash
