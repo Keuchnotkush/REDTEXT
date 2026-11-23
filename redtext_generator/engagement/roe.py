@@ -12,7 +12,8 @@ genuinely authorized and bounded, not merely that the fields are non-empty:
 Stdlib only. Dataclasses keep the shape explicit and serializable.
 """
 
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
 from typing import List
 
 
@@ -111,6 +112,10 @@ class RulesOfEngagement:
 
         return errors
 
+    def to_dict(self):
+        return asdict(self)
+
+
     def is_valid(self) -> bool:
         """True when the RoE is a complete, authorized engagement context."""
         return not self.validate()
@@ -122,3 +127,19 @@ class RulesOfEngagement:
             raise ValueError(
                 "Invalid Rules of Engagement:\n  - " + "\n  - ".join(errors)
             )
+
+    @classmethod
+    def from_dict(cls, data):
+        data = dict(data)
+        data["authorized_signatories"] = [Signatory(**s) for s in data["authorized_signatories"]]
+        data["emergency_contacts"] = [EmergencyContact(**s) for s in data["emergency_contacts"]]
+        return cls(**data)
+
+    def save(self, path):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(),f)
+
+    @classmethod
+    def load(cls,path):
+        with open(path, encoding="utf-8") as f:
+            return cls.from_dict(json.load(f))

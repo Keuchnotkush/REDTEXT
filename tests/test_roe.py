@@ -119,3 +119,15 @@ def test_raise_if_invalid_raises_on_bad_roe():
 def test_raise_if_invalid_is_silent_on_good_roe():
     roe = _valid_roe()
     roe.raise_if_invalid()  # must not raise
+
+
+def test_roundtrip_through_dict():
+    roe = _valid_roe()
+    assert RulesOfEngagement.from_dict(roe.to_dict()) == roe
+
+
+def test_roundtrip_through_file(tmp_path):
+    roe = _valid_roe()
+    path = tmp_path / "roe.json"
+    roe.save(path)
+    assert RulesOfEngagement.load(path) == roe
