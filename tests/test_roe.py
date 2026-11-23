@@ -131,3 +131,14 @@ def test_roundtrip_through_file(tmp_path):
     path = tmp_path / "roe.json"
     roe.save(path)
     assert RulesOfEngagement.load(path) == roe
+
+
+def test_authorization_artifact_contains_key_facts():
+    art = _valid_roe().to_authorization_artifact()
+    assert "Acme Corp" in art
+    assert "board delegation" in art
+    assert "production payroll system" in art
+
+def test_authorization_artifact_refuses_invalid_roe():
+    with pytest.raises(ValueError):
+        _valid_roe(client_name="").to_authorization_artifact()

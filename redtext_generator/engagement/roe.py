@@ -137,9 +137,43 @@ class RulesOfEngagement:
 
     def save(self, path):
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(),f)
+            json.dump(self.to_dict(), f)
 
     @classmethod
     def load(cls,path):
         with open(path, encoding="utf-8") as f:
             return cls.from_dict(json.load(f))
+
+    def to_authorization_artifact(self):
+        self.raise_if_invalid()
+
+        vectors = "\n".join(f"  - {v}" for v in self.allowed_vectors)
+        signatories = "\n".join(f"  - {s.name}, {s.title}, {s.authority}" for s in self.authorized_signatories)
+        no_go = "\n".join(f"  - {n}" for n in self.out_of_scope)
+        abort = "\n".join(f"  - {ab}" for ab in self.abort_conditions)
+        contacts = "\n".join(f"  - {c.name}, {c.role}, {c.phone}" for c in self.emergency_contacts)
+
+        return f"""AUTHORIZATION TO OPERATE {self.engagement_name}
+
+Client:             {self.client_name}
+Scope:              {self.scope_description}
+Data jurisdiction:  {self.data_jurisdiction}
+Windows:            {", ".join(self.windows)}
+
+Allowed vectors:
+{vectors}
+
+Authorized by:
+{signatories}
+
+Out of scope / no-go:
+{no_go}
+
+Abort:
+{abort}
+
+Emergency-stop contacts:
+{contacts}
+
+Deconfliction:      {self.deconfliction}
+"""
